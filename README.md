@@ -23,6 +23,10 @@ In addition to these guidelines, we have a few extra rules to keep in mind:
 * **Unit Tests**: Every feature must have at least one unit test to ensure it works correctly.
 * **Benchmarks**: It is best practice to write benchmarks for all new features to further test and to drive our aim of high performance.
 
+## Documentation
+
+See to [documentation](docs/introduction.md).
+
 ## Build And CI
 
 ### Source Only
