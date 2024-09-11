@@ -65,4 +65,4 @@ Solving atomicity issues in Free Threaded Python requires a combination of atomi
 
 ## Next Steps
 
-In the next section, [FTPython Programming A Worked Example](ft_worked_example.md), we will demonstrate how to apply these concepts in real-world code, showcasing the benefits of using Free Threaded Python and its associated libraries for concurrent programming.
+In the next section, [FTPython Programming Worked Examples](ft_worked_examples.md), we will demonstrate how to apply these concepts in real-world code, showcasing the benefits of using Free Threaded Python and its associated libraries for concurrent programming.

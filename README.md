@@ -25,7 +25,7 @@ In addition to these guidelines, we have a few extra rules to keep in mind:
 
 ## Documentation
 
-See to [documentation](docs/introduction.md).
+See to [documentation](docs/index.md).
 
 ## Build And CI
 

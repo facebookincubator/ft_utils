@@ -72,6 +72,12 @@ In addition the following numeric methods are implemented.
 * `__ixor__(self, other)`: Performs a bitwise XOR of `self` and `other` in-place and returns `self`.
 * `__iand__(self, other)`: Performs a bitwise AND of `self` and `other` in-place and returns `self`.
 * `__int__(self)`: Returns an integer representation of `self`.
+* `__eq__(self, other)`: Returns `True` if `self` is equal to `other`, `False` otherwise.
+* `__ne__(self, other)`: Returns `True` if `self` is not equal to `other`, `False` otherwise.
+* `__lt__(self, other)`: Returns `True` if `self` is less than `other`, `False` otherwise.
+* `__le__(self, other)`: Returns `True` if `self` is less than or equal to `other`, `False` otherwise.
+* `__gt__(self, other)`: Returns `True` if `self` is greater than `other`, `False` otherwise.
+* `__ge__(self, other)`: Returns `True` if `self` is greater than or equal to `other`, `False` otherwise.
 
 ### Example
 

@@ -16,6 +16,6 @@ For a comprehensive overview of the ft_utils API, please see our [API documentat
 
 ## Getting Started
 
-If you're new to concurrent programming in Free Threaded Python, we recommend starting with our [worked example](ft_worked_example.md), which demonstrates how to use ft_utils to write a simple concurrent program. This example will give you a hands-on understanding of how to apply the concepts and best practices discussed in this documentation.
+If you're new to concurrent programming in Free Threaded Python, we recommend starting with our [worked examples](ft_worked_examples.md), which demonstrates how to use ft_utils to write a simple concurrent programs. These examples will give you a hands-on understanding of how to apply the concepts and best practices discussed in this documentation.
 
 We hope this documentation helps you get started with concurrent programming in Free Threaded Python and makes the most of the ft_utils library. If you have any questions or feedback, please don't hesitate to reach out.
