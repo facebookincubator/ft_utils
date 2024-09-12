@@ -1,4 +1,4 @@
-# Welcome to ft_utils!
+#sudo su# Welcome to ft_utils!
 
 We're excited to share this library with you, designed to help you build high-performance applications with
 Free Threaded Python.
