@@ -1,7 +1,7 @@
 /* Copyright (c) Meta Platforms, Inc. and affiliates. */
 #include "ft_utils.h"
 
-#ifndef Py_ATOMIC_H
+#ifndef Py_GIL_DISABLED
 
 #define _PyObject_SetMaybeWeakref(_x) // Noop
 
@@ -13,11 +13,14 @@ static inline PyObject* _Py_XGetRef(PyObject** obj_ptr) {
 static inline int _Py_TryIncrefCompare(PyObject** obj_ptr, PyObject* expected) {
   return *obj_ptr == expected ? (Py_INCREF(*obj_ptr), 1) : 0;
 }
-#endif
+
+#else
 
 #define Py_BUILD_CORE
 #include "pycore_object.h" // @manual
 #undef Py_BUILD_CORE
+
+#endif
 
 void ConcurrentRegisterReference(PyObject* obj) {
   _PyObject_SetMaybeWeakref(obj);
