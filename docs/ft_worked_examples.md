@@ -153,3 +153,32 @@ We can see that even with NoGIL the simple threaded approach still only has one 
 Next we can look at the code which is unlocked but truly multi-threaded and we can see how we have, as expected, inconsistent results.
 
 Finally, we can see how the interval lock fixes this issue.
+
+## Benchmarking And Optimizing Parallel Systems
+
+### Introduction
+
+The `fibonacci.py` code is a high-performance benchmarking tool designed to explore the scalability of different parallelization techniques in Python. By leveraging the popular Fibonacci sequence as a computational workload, this code aims to provide a opportunity to investigate the performance characteristics of various execution modes, including naive threads, processes, and optimized thread-based approaches. Developed with the goal of understanding the intricacies of concurrent programming in Python, the `fibonacci.py` code is a resource for developers seeking to optimize their applications for maximum performance.
+
+## What the Code Does
+
+The `fibonacci.py` code computes a group of Fibonacci numbers using the fast doubling technique, a method that reduces the computational complexity of calculating large Fibonacci numbers. The code takes several input parameters, including the position of the Fibonacci number to compute (`--nth_element`), the number of Fibonacci numbers to calculate (`--run_size`), the number of worker threads or processes (`--workers`), and the execution mode (`--mode`). Depending on the chosen mode, the code executes the Fibonacci computation using either a simple thread pool executor, an optimized thread-based approach with concurrent queues and atomic integers, or a process pool executor.
+
+## How the Code Works
+
+At its core, the `fibonacci.py` code consists of three primary components: the `fib_worker` function, which performs the actual Fibonacci computation; the `fib_tasks` and `fib_queue` functions, which manage the execution of tasks in different modes; and the main `invoke_main` function, which parses command-line arguments and orchestrates the entire computation. The code uses the `timeit` module to measure the execution time of the Fibonacci computation over five runs, providing an average execution time and total execution time. Additionally, the code reports the cache rate for thread-based modes, offering insights into the effectiveness of memoization in reducing computational overhead.
+
+See the source code here:
+**[fibonacci.py](https://github.com/facebookincubator/ft_utils/blob/main/examples/fibonacci.py)**
+
+## Discussion
+
+Scaling is a critical aspect of high-performance computing, and understanding how different programming techniques and libraries impact performance is essential. The provided benchmark code is designed to model placing tasks in workers and measure how it scales with different modes of operation ("threads", "fast_threads" or "processes"). The code computes a group of Fibonacci numbers using the fast doubling technique, allowing for varying the number of workers, the size of the tasks, and the mode of operation.
+
+One of the key insights from this benchmark is the importance of efficient caching mechanisms. The fib_worker function uses a memoization cache to store intermediate results, which significantly improves performance. However, when using multiple threads, a naive implementation using a Python dictionary can lead to lock contention and poor performance. This is where the ConcurrentDict class from ft_utils comes into play, providing a thread-safe and scalable caching solution.
+
+Another crucial aspect of the benchmark is the use of ConcurrentQueue and AtomicInt64 classes from ft_utils. These classes enable efficient and thread-safe communication between worker threads, allowing for fine-grained concurrency control. In the "fast_threads" mode, the ConcurrentQueue is used to feed tasks to worker threads, while AtomicInt64 is used to keep track of the number of tasks remaining. This optimized approach leads to significant performance improvements compared to the simple "threads" mode.
+
+The benchmark code also highlights the limitations of process-based parallelism. While processes can provide better isolation and fault tolerance, they incur higher overhead due to inter-process communication and synchronization. In contrast, thread-based parallelism can offer better performance and scalability, especially when combined with efficient caching and concurrency control mechanisms.
+
+Overall, this benchmark demonstrates the importance of careful design and optimization when building high-performance applications. By leveraging efficient caching mechanisms, concurrent data structures, and fine-grained concurrency control, developers can unlock significant performance gains and improve the scalability of their applications.

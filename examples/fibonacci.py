@@ -85,13 +85,13 @@ def fib_worker(n: int, memo: Dict[int, Tuple[int, int]]) -> Tuple[int, int]:
 
 def invoke_main() -> None:
     parser = argparse.ArgumentParser(
-        description="Compute the nth Fibonacci number using the Fast Doubling Method with parallelization."
+        description="Compute multiple Fibonacci numbers in parallel"
     )
     parser.add_argument(
         "--nth_element",
         type=int,
         required=True,
-        help="The position of the Fibonacci number to computei from.",
+        help="The position of the Fibonacci number to compute from.",
     )
     parser.add_argument(
         "--run_size", type=int, required=True, help="How many numbers to compute."
