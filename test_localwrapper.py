@@ -116,6 +116,23 @@ class TestLocalWrapperSmokes(unittest.TestCase):
         expected_repr = f"<LocalWrapper: {obj_repr}>"
         self.assertEqual(wrapper_repr, expected_repr)
 
+    def test_dict(self):
+        ld = LocalWrapper({})
+        ld[1] = 2
+        self.assertEqual(ld[1], 2)
+        self.assertTrue(1 in ld)
+        for k, v in ld.items():
+            self.assertEqual(k, 1)
+            self.assertEqual(v, 2)
+        del ld[1]
+        self.assertFalse(1 in ld)
+        ld[1] = "dog"
+        ld[1] = 3
+        for k in ld.keys():
+            self.assertEqual(k, 1)
+        for v in ld.values():
+            self.assertEqual(v, 3)
+
 
 class TestLocalWrapperBytearray(unittest.TestCase):
     def setUp(self):

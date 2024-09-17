@@ -120,6 +120,8 @@ static PyObject* LocalWrapper_item(LocalWrapperObject* self, Py_ssize_t index) {
 static int LocalWrapper_contains(LocalWrapperObject* self, PyObject* value) {
   if (PySequence_Check(self->wrapped)) {
     return PySequence_Contains(self->wrapped, value);
+  } else if (PyMapping_Check(self->wrapped)) {
+    return PyMapping_HasKey(self->wrapped, value);
   }
   PyErr_SetString(PyExc_TypeError, "object does not support containment check");
   return -1;
