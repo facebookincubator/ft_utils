@@ -92,7 +92,7 @@ class ConcurrentGatheringIterator:
                 # fixes this with introducing strict interlocking between producer and consumer
                 # (which is the very thing we are trying to avoid).
                 with _cond:
-                    while not _dict.has(key):
+                    while key not in _dict:
                         self._cond.wait(0.01)
                         if _failed:
                             raise RuntimeError("Iterator insertion failed")
@@ -135,7 +135,7 @@ class ConcurrentQueue:
             value = _dict[next_key]
         except KeyError:
             with _cond:
-                while not _dict.has(next_key):
+                while next_key not in _dict:
                     _cond.wait(0.01)
                     if self._failed:
                         raise RuntimeError("Queue failed")

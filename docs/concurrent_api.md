@@ -9,9 +9,6 @@ A concurrently accessible dictionary.
 ### Methods
 
 * `__init__(scaling=17)`: Initializes a new ConcurrentDict with the specified number of concurrent structures. This relates to the number of threads it supports with good scaling. For optimal performance, this value should be close to the number of cores on the machine. However, under or over estimating this value by a factor of 2 or even more does not have a huge impact on performance.
-* `get(key)`: Returns the value associated with the specified key.
-* `set(key, value)`: Sets the value associated with the specified key.
-* `has(key)`: Returns True if the key is present in the dictionary, False otherwise.
 
 ### Operators
 
@@ -20,8 +17,7 @@ ConcurrentDict also supports the following access methods:
 * `d[key]`: Returns the value associated with the specified key.
 * `d[key] = value`: Sets the value associated with the specified key.
 * `del d[key]`: Deletes the key-value pair associated with the specified key.
-
-Note that the `in` operator is not supported because of implementation details in the CPython runtime. Please use `has` instead.
+* `key in d`: Returns `True` if the dictionary holds the specified key, `False` otherwise..
 
 ### Notes
 
@@ -34,9 +30,9 @@ from ft_utils.concurrent import ConcurrentDict
 d = ConcurrentDict()
 d['key'] = 'value'
 print(d['key'])  # prints 'value'
-print(d.has('key'))  # prints True
+print('key' in d))  # prints True
 del d['key']
-print(d.has('key'))  # prints False
+print('key' in d))  # prints False
 ```
 
 ## AtomicInt64

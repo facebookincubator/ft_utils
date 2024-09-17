@@ -70,6 +70,24 @@ class ConcurretDictBenchmarkProvider(BenchmarkProvider):
             x = what[x % 1024]
             lw[f"{x}"]
 
+    def benchmark_in(self) -> None:
+        lw = LocalWrapper(self._cdct)
+        what = [ft_randint(0, 1024) for _ in range(1024)]
+        for x in what:
+            lw[f"{x}"] = x
+        for x in range(self._operations):
+            x = what[x % 1024]
+            f"{x}" in lw
+
+    def benchmark_in_dict(self) -> None:
+        lw = LocalWrapper(self._dct)
+        what = [ft_randint(0, 1024) for _ in range(1024)]
+        for x in what:
+            lw[f"{x}"] = x
+        for x in range(self._operations):
+            x = what[x % 1024]
+            f"{x}" in lw
+
 
 def invoke_main() -> None:
     execute_benchmarks(ConcurretDictBenchmarkProvider)

@@ -67,7 +67,7 @@ static PyObject* ConcurrentDict_getitem(
     ConcurrentDictObject* self,
     PyObject* key) {
   Py_hash_t hash = PyObject_Hash(key);
-  if (hash == -1) {
+  if (hash == -1 && PyErr_Occurred()) {
     return NULL;
   }
 
@@ -91,7 +91,7 @@ static int ConcurrentDict_setitem(
     PyObject* key,
     PyObject* value) {
   Py_hash_t hash = PyObject_Hash(key);
-  if (hash == -1) {
+  if (hash == -1 && PyErr_Occurred()) {
     return -1;
   }
 
@@ -112,10 +112,10 @@ static int ConcurrentDict_setitem(
   return 0;
 }
 
-static PyObject* ConcurrentDict_has(ConcurrentDictObject* self, PyObject* key) {
+static int ConcurrentDict_contains(ConcurrentDictObject* self, PyObject* key) {
   Py_hash_t hash = PyObject_Hash(key);
-  if (hash == -1) {
-    return NULL;
+  if (hash == -1 && PyErr_Occurred()) {
+    return -1;
   }
 
   Py_ssize_t index = hash % self->size;
@@ -123,11 +123,7 @@ static PyObject* ConcurrentDict_has(ConcurrentDictObject* self, PyObject* key) {
     index = -index;
   }
 
-  if (PyDict_Contains(self->buckets[index], key)) {
-    Py_RETURN_TRUE;
-  } else {
-    Py_RETURN_FALSE;
-  }
+  return PyDict_Contains(self->buckets[index], key);
 }
 
 static int ConcurrentDict_traverse(
@@ -147,12 +143,9 @@ static PyMappingMethods ConcurrentDict_mapping = {
     (objobjargproc)ConcurrentDict_setitem, // mp_ass_subscript
 };
 
-static PyMethodDef ConcurrentDict_methods[] = {
-    {"has",
-     (PyCFunction)ConcurrentDict_has,
-     METH_O,
-     "Check if a key is in the dictionary"},
-    {NULL, NULL, 0, NULL}};
+static PySequenceMethods ConcurrentDict_sequence = {
+    .sq_contains = (objobjproc)ConcurrentDict_contains,
+};
 
 static PyTypeObject ConcurrentDictType = {
     PyVarObject_HEAD_INIT(NULL, 0).tp_name = "_concurrent.ConcurrentDict",
@@ -161,11 +154,11 @@ static PyTypeObject ConcurrentDictType = {
     .tp_itemsize = 0,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .tp_as_mapping = &ConcurrentDict_mapping,
+    .tp_as_sequence = &ConcurrentDict_sequence,
     .tp_new = ConcurrentDict_new,
     .tp_dealloc = (destructor)ConcurrentDict_dealloc,
     .tp_traverse = (traverseproc)ConcurrentDict_traverse,
     .tp_clear = (inquiry)ConcurrentDict_clear,
-    .tp_methods = ConcurrentDict_methods,
     .tp_weaklistoffset = offsetof(ConcurrentDictObject, weakreflist),
 };
 

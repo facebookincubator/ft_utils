@@ -17,6 +17,7 @@ class TestConcurrentDict(unittest.TestCase):
         dct = concurrent.ConcurrentDict()
         dct[1] = 2
         self.assertEqual(dct[1], 2)
+        self.assertTrue(1 in dct)
         del dct[1]
         with self.assertRaisesRegex(KeyError, "1"):
             dct[1]
@@ -73,6 +74,38 @@ class TestConcurrentDict(unittest.TestCase):
             self.assertEqual(dct[str(i)], str(i * 2))
         with self.assertRaisesRegex(KeyError, "-10"):
             del dct["-10"]
+
+    def test_dundar(self):
+        class Hasher:
+            def __init__(self, value):
+                self._value = value
+
+            def __hash__(self):
+                if self._value is None:
+                    raise RuntimeError("Invalid Hasher")
+                return self._value
+
+        dct = concurrent.ConcurrentDict()
+        illegal = Hasher(None)
+
+        with self.assertRaisesRegex(RuntimeError, "Invalid Hasher"):
+            dct[illegal]
+
+        with self.assertRaises(RuntimeError):
+            illegal in dct
+
+        with self.assertRaisesRegex(RuntimeError, "Invalid Hasher"):
+            dct[illegal] = 2
+
+        with self.assertRaisesRegex(RuntimeError, "Invalid Hasher"):
+            del dct[illegal]
+
+        legal = Hasher(-1)
+        dct[legal] = "dog"
+        self.assertTrue(legal in dct)
+        self.assertEqual(dct[legal], "dog")
+        del dct[legal]
+        self.assertFalse(legal in dct)
 
 
 class TestConcurrentDictGC(unittest.TestCase):
@@ -285,7 +318,7 @@ class BreakingDict(dict):
     def __setitem__(self, key, value):
         raise RuntimeError("Cannot assign to this dictionary")
 
-    def has(self, key):
+    def __contains__(self, key):
         return key in self
 
 
