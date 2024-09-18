@@ -160,24 +160,53 @@ Finally, we can see how the interval lock fixes this issue.
 
 The `fibonacci.py` code is a high-performance benchmarking tool designed to explore the scalability of different parallelization techniques in Python. By leveraging the popular Fibonacci sequence as a computational workload, this code aims to provide a opportunity to investigate the performance characteristics of various execution modes, including naive threads, processes, and optimized thread-based approaches. Developed with the goal of understanding the intricacies of concurrent programming in Python, the `fibonacci.py` code is a resource for developers seeking to optimize their applications for maximum performance.
 
-## What the Code Does
+### What the Code Does
 
 The `fibonacci.py` code computes a group of Fibonacci numbers using the fast doubling technique, a method that reduces the computational complexity of calculating large Fibonacci numbers. The code takes several input parameters, including the position of the Fibonacci number to compute (`--nth_element`), the number of Fibonacci numbers to calculate (`--run_size`), the number of worker threads or processes (`--workers`), and the execution mode (`--mode`). Depending on the chosen mode, the code executes the Fibonacci computation using either a simple thread pool executor, an optimized thread-based approach with concurrent queues and atomic integers, or a process pool executor.
 
-## How the Code Works
+### How the Code Works
 
 At its core, the `fibonacci.py` code consists of three primary components: the `fib_worker` function, which performs the actual Fibonacci computation; the `fib_tasks` and `fib_queue` functions, which manage the execution of tasks in different modes; and the main `invoke_main` function, which parses command-line arguments and orchestrates the entire computation. The code uses the `timeit` module to measure the execution time of the Fibonacci computation over five runs, providing an average execution time and total execution time. Additionally, the code reports the cache rate for thread-based modes, offering insights into the effectiveness of memoization in reducing computational overhead.
 
 See the source code here:
 **[fibonacci.py](https://github.com/facebookincubator/ft_utils/blob/main/examples/fibonacci.py)**
 
-## Discussion
+### Discussion
 
 Scaling is a critical aspect of high-performance computing, and understanding how different programming techniques and libraries impact performance is essential. The provided benchmark code is designed to model placing tasks in workers and measure how it scales with different modes of operation ("threads", "fast_threads" or "processes"). The code computes a group of Fibonacci numbers using the fast doubling technique, allowing for varying the number of workers, the size of the tasks, and the mode of operation.
 
 One of the key insights from this benchmark is the importance of efficient caching mechanisms. The fib_worker function uses a memoization cache to store intermediate results, which significantly improves performance. However, when using multiple threads, a naive implementation using a Python dictionary can lead to lock contention and poor performance. This is where the ConcurrentDict class from ft_utils comes into play, providing a thread-safe and scalable caching solution.
 
 Another crucial aspect of the benchmark is the use of ConcurrentQueue and AtomicInt64 classes from ft_utils. These classes enable efficient and thread-safe communication between worker threads, allowing for fine-grained concurrency control. In the "fast_threads" mode, the ConcurrentQueue is used to feed tasks to worker threads, while AtomicInt64 is used to keep track of the number of tasks remaining. This optimized approach leads to significant performance improvements compared to the simple "threads" mode.
+
+```python
+def fib_queue(n: int, executor: Executor, workers: int, rs: int) -> None:
+    q = ConcurrentQueue(workers)
+    for _ in range(rs):
+        q.push(n + random.randint(0, rs * 2))
+
+    tasks = AtomicInt64(rs)
+    memo = ConcurrentDict(workers)
+
+    def compute():  # pyre-ignore
+        _memo = LocalWrapper(memo)
+        _tasks = LocalWrapper(tasks)
+        _fib_worker = LocalWrapper(fib_worker)
+        _q = LocalWrapper(q)
+        while _tasks.decr() > -1:
+            z = _q.pop()
+            _fib_worker(z, _memo)
+```
+
+The `ConcurrentQueue` is designed to block if the `pop()` method is invoked while it is empty. To prevent this scenario and ensure smooth operation across multiple threads, the `AtomicInt64` is employed. This atomic integer utilizes specific instructions available on most architectures that support atomic addition, allowing the `incr()` and `decr()` methods to leverage hardware efficiently and maintain consistency across threads. Additionally, the code incorporates the `LocalWrapper` to minimize cross-thread reference counting. In Python, each object is associated with a reference count as part of its resource management and garbage collection system. Contention on these counts across multiple threads can lead to poor scaling. By wrapping objects in `LocalWrapper` instances—where each instance is accessed exclusively within a single thread—the contention on the reference count of the wrapped object is effectively eliminated. Mostly, changes to the reference count of the wrapped object occur only when the `LocalWrapper` instances are garbage collected, further enhancing performance and scalability. Some subtle patterns will break this rule, for example:
+
+```python
+options = ("q", "q", "r")
+wrapper = LocalWrapper(options)
+
+# This statement will increment the reference count of options.
+a_ref = wrapper[:]
+```
 
 The benchmark code also highlights the limitations of process-based parallelism. While processes can provide better isolation and fault tolerance, they incur higher overhead due to inter-process communication and synchronization. In contrast, thread-based parallelism can offer better performance and scalability, especially when combined with efficient caching and concurrency control mechanisms.
 
