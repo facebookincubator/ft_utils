@@ -133,6 +133,15 @@ class TestLocalWrapperSmokes(unittest.TestCase):
         for v in ld.values():
             self.assertEqual(v, 3)
 
+    def test_slice(self):
+        tp = 1, 2, 3, 4, 5, 6
+        w = LocalWrapper(tp)
+        self.assertIs(w[:], tp)
+        self.assertEqual(w[:2], tp[:2])
+        self.assertEqual(w[2:], tp[2:])
+        self.assertEqual(w[1:4], tp[1:4])
+        self.assertEqual(w[-2:-1], tp[-2:-1])
+
 
 class TestLocalWrapperBytearray(unittest.TestCase):
     def setUp(self):
