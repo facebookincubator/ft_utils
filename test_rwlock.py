@@ -7,7 +7,7 @@ import time
 import unittest
 
 from ft_utils.concurrent import AtomicFlag, AtomicInt64
-
+from ft_utils.lock_test_utils import run_interrupt_handling
 from ft_utils.synchronization import RWLock, RWReadContext, RWWriteContext
 
 
@@ -316,3 +316,41 @@ class TestRWLock(unittest.TestCase):
         self.assertEqual(writers_waiting, 1)
         self.assertTrue(locked)
         self.assertTrue(unlocked)
+
+
+class TestRWLockSignals(unittest.TestCase):
+    def test_interrupt_handling_write(self):
+        def acquire(lock):
+            lock.lock_write()
+
+        def release(lock):
+            lock.unlock_write()
+
+        run_interrupt_handling(self, RWLock(), acquire, release)
+
+    def test_interrupt_handling_read(self):
+        phase = AtomicInt64(0)
+
+        def acquire(lock):
+            if phase == 0:
+                lock.lock_write()
+            elif phase == 1:
+                lock.lock_read()
+            else:
+                raise RuntimeError("Acquire lock phase error")
+            phase.incr()
+
+        def release(lock):
+            if phase == 1:
+                lock.unlock_write()
+            if phase == 2:
+                lock.unlock_read()
+            else:
+                raise RuntimeError("Release lock phase error")
+            phase.incr()
+
+        run_interrupt_handling(self, RWLock(), acquire, release)
+
+
+if __name__ == "__main__":
+    unittest.main()

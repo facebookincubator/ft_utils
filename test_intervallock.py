@@ -6,6 +6,7 @@ import threading
 import time
 import unittest
 
+from ft_utils.lock_test_utils import run_interrupt_handling
 from ft_utils.synchronization import IntervalLock
 
 
@@ -158,6 +159,17 @@ class TestIntervalLock(unittest.TestCase):
         self._test_lock_method_allows_other_threads_to_acquire_lock(
             "cede", use_sleep=False, with_cede=True
         )
+
+
+class TestIntervalLockSignals(unittest.TestCase):
+    def test_interrupt_handling(self):
+        def acquire(lock):
+            lock.lock()
+
+        def release(lock):
+            lock.unlock()
+
+        run_interrupt_handling(self, IntervalLock(), acquire, release)
 
 
 if __name__ == "__main__":
