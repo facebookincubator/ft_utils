@@ -57,3 +57,5 @@ https_proxy=http://fwdproxy:8080 python setup.py
 ### CI
 
 The code in ft_utils is built and tested interally within Meta. At the time of writing there is no external CI.
+
+However, once installed you can test the code via `python -m ft_utils.tests.test_run_all`. This will not work if your current working directory is the ft_utils source director (due to name clash). This will run all the tests and benchmarks which are known good and report any failures.

@@ -17,6 +17,7 @@ static inline int _Py_TryIncrefCompare(PyObject** obj_ptr, PyObject* expected) {
 #else
 
 #define Py_BUILD_CORE
+#undef Py_REF_DEBUG
 #include "pycore_object.h" // @manual
 #undef Py_BUILD_CORE
 

@@ -14,9 +14,9 @@ from typing import Any, Callable
 def setup() -> None:
     global NUM_THREADS, CITIES, MAX_COST, NUM_RUNS
     parser = argparse.ArgumentParser(description="TSP Solver")
-    parser.add_argument("--num_threads", type=int, default=10, help="Number of threads")
+    parser.add_argument("--num_threads", type=int, default=8, help="Number of threads")
     parser.add_argument("--num_runs", type=int, default=5, help="Number of runs")
-    parser.add_argument("--cities", type=int, default=10, help="Number of cities")
+    parser.add_argument("--cities", type=int, default=8, help="Number of cities")
     args: argparse.Namespace = parser.parse_args()
     NUM_THREADS = args.num_threads  # pyre-ignore[10]
     NUM_RUNS = args.num_runs  # pyre-ignore[10]

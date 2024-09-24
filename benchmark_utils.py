@@ -15,6 +15,7 @@ from typing import Callable, List, Sequence, Type, TypeVar
 
 from ft_utils.local import BatchExecutor
 
+
 _BATCH_RAND = BatchExecutor(lambda: random.getrandbits(32), 1024)
 
 

@@ -595,3 +595,7 @@ class TestAtomicReference(unittest.TestCase):
             TypeError, r"AtomicReference\(\) takes zero or one argument$"
         ):
             concurrent.AtomicReference(x, y)
+
+
+if __name__ == "__main__":
+    unittest.main()

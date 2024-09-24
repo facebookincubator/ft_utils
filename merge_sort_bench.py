@@ -149,7 +149,7 @@ class MergeSortBenchmark:
 def invoke_main() -> None:
     parser: argparse.ArgumentParser = argparse.ArgumentParser()
     parser.add_argument("--n_cpus", type=int, default=16)
-    parser.add_argument("--max_size", type=int, default=1000000)
+    parser.add_argument("--max_size", type=int, default=100000)
     parser.add_argument("--threshold", type=int, default=1000)
     parser.add_argument("--max_threads", type=int, default=2)
     args: argparse.Namespace = parser.parse_args()

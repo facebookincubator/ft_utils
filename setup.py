@@ -1,5 +1,7 @@
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 
+# pyre-unsafe
+
 import os
 import shutil
 import sys
@@ -73,8 +75,8 @@ def copy_files(build_dir, script_dir, python_dir, tests_dir, native_dir):
             shutil.copy(filepath, build_dir)
 
 
-def create_init_py(python_dir):
-    init_py_path = os.path.join(python_dir, "__init__.py")
+def create_init_py(module_dir):
+    init_py_path = os.path.join(module_dir, "__init__.py")
     with open(init_py_path, "w"):
         pass
 
@@ -120,22 +122,38 @@ def invoke_main():
     python_dir, tests_dir, native_dir = create_package_structure(build_dir)
     copy_files(build_dir, script_dir, python_dir, tests_dir, native_dir)
     create_init_py(python_dir)
+    create_init_py(tests_dir)
     create_license(script_dir, build_dir)
     create_setup_cfg(build_dir)
 
-    c_extensions = []
-    for filename in os.listdir(script_dir):
+    supporting_files = []
+    extension_modules = []
+    include_dir = sysconfig.get_python_inc()
+
+    # Any file starting ft_ and ending .c will be compiled into all libraries as
+    # support c file.
+    for filename in os.listdir(native_dir):
         if filename.endswith(".c"):
-            include_dir = sysconfig.get_python_inc()
-            module_name = os.path.splitext(filename)[0]
-            source_file = os.path.join("ft_utils", "native", filename)
-            c_extensions.append(
-                Extension(
-                    f"ft_utils.{module_name}",
-                    [source_file],
-                    include_dirs=[include_dir, os.path.join(include_dir, "internal")],
-                )
+            if filename.startswith("ft_"):
+                supporting_files.append(filename)
+            else:
+                extension_modules.append(filename)
+
+    c_extensions = []
+    for module_filename in extension_modules:
+        module_name = os.path.splitext(module_filename)[0]
+        source_files = [os.path.join("ft_utils", "native", module_filename)]
+        source_files += [
+            os.path.join("ft_utils", "native", support_file)
+            for support_file in supporting_files
+        ]
+        c_extensions.append(
+            Extension(
+                f"ft_utils.{module_name}",
+                source_files,
+                include_dirs=[include_dir, os.path.join(include_dir, "internal")],
             )
+        )
 
     with open(os.path.join(build_dir, "README.md")) as readme_file:
         long_descr = readme_file.read()
@@ -152,7 +170,7 @@ def invoke_main():
             author_email="open-source@fb.com",
             url="https://github.com/facebookincubator/ft_utils",
             license="MIT",
-            packages=find_packages(where=build_dir),
+            packages=["ft_utils", "ft_utils.native", "ft_utils.tests"],
             ext_modules=c_extensions,
             classifiers=[
                 "Development Status :: 1 - alpha/Unstable",

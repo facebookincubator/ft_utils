@@ -77,3 +77,7 @@ class TestWeakRefToAtomicReference(WeakReferenceTestBase):
 class TestWeakRefToAtomicFlag(WeakReferenceTestBase):
     def get_object_to_reference(self) -> AtomicFlag:
         return AtomicFlag(True)
+
+
+if __name__ == "__main__":
+    unittest.main()

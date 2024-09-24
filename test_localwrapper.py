@@ -1016,3 +1016,7 @@ class TestLocalWrapperContext(unittest.TestCase):
             checker()
         self.assertTrue(ctx_mgr.enter_called)
         self.assertTrue(ctx_mgr.exit_called)
+
+
+if __name__ == "__main__":
+    unittest.main()

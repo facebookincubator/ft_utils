@@ -124,3 +124,7 @@ class TestBatchExecutorCyclicGarbageCollection(unittest.TestCase):
         while gc.collect():
             pass
         self.assertIsNone(weak_ref(), "Executor should have been garbage collected")
+
+
+if __name__ == "__main__":
+    unittest.main()

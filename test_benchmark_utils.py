@@ -6,7 +6,7 @@ import sys
 import unittest
 from unittest.mock import MagicMock, patch
 
-from .benchmark_utils import (
+from ft_utils.benchmark_utils import (
     benchmark_operation,
     BenchmarkProvider,
     execute_benchmarks,
