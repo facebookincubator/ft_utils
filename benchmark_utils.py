@@ -10,8 +10,9 @@ import sys
 import threading
 import time
 import traceback
+from collections.abc import Callable, Sequence
 
-from typing import Callable, List, Sequence, Type, TypeVar
+from typing import List, Type, TypeVar
 
 from ft_utils.local import BatchExecutor
 
@@ -90,17 +91,17 @@ def benchmark_operation(operation_func: Callable[[], None]) -> float:
 def worker(
     operation_func: Callable[[], None],
     barrier: threading.Barrier,
-) -> List[float]:
+) -> list[float]:
     """
     Executes the benchmark multiple times and collects run times.
     """
     barrier.wait()  # Synchronize the start of operations
-    run_times: List[float] = [benchmark_operation(operation_func) for _ in range(5)]
+    run_times: list[float] = [benchmark_operation(operation_func) for _ in range(5)]
     return run_times
 
 
 def execute_benchmarks(
-    provider_class: Type[BenchmarkProvider],
+    provider_class: type[BenchmarkProvider],
 ) -> None:
     """
     Sets up and executes benchmarks across multiple threads using methods from a BenchmarkProvider.

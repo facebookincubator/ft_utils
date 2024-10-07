@@ -4,7 +4,7 @@
 
 
 import threading
-from typing import Callable
+from collections.abc import Callable
 
 from ft_utils.concurrent import AtomicInt64
 from ft_utils.synchronization import IntervalLock

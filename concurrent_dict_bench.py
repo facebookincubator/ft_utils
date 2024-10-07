@@ -15,8 +15,8 @@ from ft_utils.local import LocalWrapper
 class ConcurretDictBenchmarkProvider(BenchmarkProvider):
     def __init__(self, operations: int) -> None:
         self._operations = operations
-        self._cdct: Optional[ConcurrentDict] = None
-        self._dct: Optional[dict[int | str, int]] = None
+        self._cdct: ConcurrentDict | None = None
+        self._dct: dict[int | str, int] | None = None
 
     def set_up(self) -> None:
         self._cdct = ConcurrentDict(os.cpu_count())

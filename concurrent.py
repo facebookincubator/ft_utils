@@ -3,7 +3,8 @@
 # pyre-strict
 
 import threading
-from typing import Any, Iterator, Optional
+from collections.abc import Iterator
+from typing import Any, Optional
 
 from ft_utils._concurrent import AtomicInt64, AtomicReference, ConcurrentDict
 
@@ -38,7 +39,7 @@ class ConcurrentGatheringIterator:
     scaling (Optional(int)): expected number of threads or cores accessing the structure.
     """
 
-    def __init__(self, scaling: Optional[int] = None) -> None:
+    def __init__(self, scaling: int | None = None) -> None:
         if scaling is not None:
             self._dict: ConcurrentDict = ConcurrentDict(scaling)
         else:
@@ -107,7 +108,7 @@ class ConcurrentGatheringIterator:
 
 
 class ConcurrentQueue:
-    def __init__(self, scaling: Optional[int] = None) -> None:
+    def __init__(self, scaling: int | None = None) -> None:
         if scaling is not None:
             self._dict: ConcurrentDict = ConcurrentDict(scaling)
         else:

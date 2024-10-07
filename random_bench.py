@@ -4,7 +4,7 @@
 
 import random
 import threading
-from typing import Callable
+from collections.abc import Callable
 
 from ft_utils.benchmark_utils import BenchmarkProvider, execute_benchmarks
 from ft_utils.local import BatchExecutor, LocalWrapper

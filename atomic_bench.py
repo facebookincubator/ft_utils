@@ -11,7 +11,7 @@ from ft_utils.local import LocalWrapper
 
 
 class LockedReference:
-    def __init__(self, value: Optional[Any]) -> None:  # pyre-ignore[2]
+    def __init__(self, value: Any | None) -> None:  # pyre-ignore[2]
         self._value = value
         self._lock = threading.Lock()
 

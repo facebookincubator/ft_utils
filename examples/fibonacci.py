@@ -51,7 +51,7 @@ def fib_queue(n: int, executor: Executor, workers: int, rs: int) -> None:
         f.result()
 
 
-def fib_worker(n: int, memo: Dict[int, Tuple[int, int]]) -> Tuple[int, int]:
+def fib_worker(n: int, memo: dict[int, tuple[int, int]]) -> tuple[int, int]:
     # Check memoization cache in a thread-safe manner
     if n in memo:
         cached.incr()

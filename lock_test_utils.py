@@ -7,7 +7,7 @@ import sys
 import threading
 import time
 import unittest
-from typing import Callable
+from collections.abc import Callable
 
 from ft_utils.concurrent import AtomicFlag, AtomicReference
 
