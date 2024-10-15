@@ -45,7 +45,7 @@ out the call to check_env() in setup.py.
 Once you have everything in place, please execute setup.py as a python script:
 
 ```
-python setup.py
+python setup.py bdist_wheel
 ```
 
 If this does not work due to networking then you might need use a proxy; for example:

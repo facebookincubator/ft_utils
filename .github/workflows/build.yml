@@ -7,57 +7,130 @@ on:
     branches:
       - main
 
+# This build configuration uses a matrix to build and test multiple Python versions.
+# Each version is actioned across on multiple operating systems (Ubuntu, Windows, macOS).
+# For standard Python builds, we use pre-built binary releases for efficiency.
+# However, since nogil-enabled Python binaries are not readily available,
+# we build Python from source with nogil (free threaded) builds.
+# This approach allows us to test our extension with different Python configurations.
+# Our goals are to ensure compatibility and reliability across various environments,
+# and to create platform-specific wheels for distribution on PyPi.
+
 jobs:
   build:
     strategy:
       fail-fast: false
       matrix:
         include:
+          # Add below those versions we want as Gil Based releases.
+          # Note that 3.12.7 is only availible with the Gil enabled.
           - os: ubuntu-latest
             python-version: '3.12.7'
+            build-from-source: false
           - os: ubuntu-latest
-            python-version: '3.13.0-rc.3'
+            python-version: '3.13.0'
+            build-from-source: false
           - os: windows-latest
-            python-version: '3.13.0-rc.3'
+            python-version: '3.13.0'
+            build-from-source: false
           - os: macos-latest
-            python-version: '3.13.0-rc.3'
+            python-version: '3.13.0'
+            build-from-source: false
           - os: ubuntu-latest
             python-version: '3.14.0-alpha.0'
+            build-from-source: false
+          # Add below those versions we want as Free Threaded releases.
+          # For these you will need the tag name see: https://github.com/python/cpython/tags
+          - os: ubuntu-latest
+            python-version: 'v3.13.0'
+            build-from-source: true
+            nogil: true
+          - os: windows-latest
+            python-version: 'v3.13.0'
+            build-from-source: true
+            nogil: true
+          - os: macos-latest
+            python-version: 'v3.13.0'
+            build-from-source: true
+            nogil: true
+          - os: ubuntu-latest
+            python-version: '3.14.0-alpha.0'
+            build-from-source: true
+            nogil: true
+
     runs-on: ${{ matrix.os }}
+
     steps:
+      # Checkout the code from the repository.
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # Set up Python using pre-built binary releases or building from source.
       - name: Set up Python
+        if: matrix.build-from-source == false
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Upgrade pip
-        run: |
-          python -m pip install --upgrade pip
+      - name: Build Python from Source
+        if: matrix.build-from-source == true
+        uses: ./.github/actions/build-python-from-source
+        with:
+          python-version: ${{ matrix.python-version }}
+          nogil: ${{ matrix.nogil }}
 
+      # Make sure we use our version of python, this is set in the build-from-source
+      # action os set it here for consistency if not building from source.
+      - name: Set LOCAL_PYTHON envvar
+        if: matrix.build-from-source == false
+        shell: bash
+        run: echo "LOCAL_PYTHON=python" >> $GITHUB_ENV
+
+      # Upgrade pip to the latest version.
+      - name: Install/Upgrade pip
+        shell: bash
+        run: |
+          cd ..
+          $LOCAL_PYTHON -m ensurepip
+          $LOCAL_PYTHON -m pip install --upgrade pip
+
+      # Make sure Visual Studio build is all in place on Windows.
       - name: Setup MSVC
         if: runner.os == 'Windows'
         uses: ilammy/msvc-dev-cmd@v1
 
+      # Install dependencies required for building and testing.
       - name: Install dependencies
-        run: |
-          pip install --upgrade setuptools wheel
-
-      - name: Build
-        run: |
-          python setup.py
-
-      - name: Install wheel
-        run: |
-          pip install build/dist/*.whl
         shell: bash
+        run: |
+          cd ..
+          $LOCAL_PYTHON -m pip install --upgrade setuptools wheel
+
+      # Build the wheel package with or without nogil suffix.
+      - name: Build
+        shell: bash
+        run: |
+          $LOCAL_PYTHON -P setup.py bdist_wheel
+          #if [ "${{ matrix.build-from-source }}" = "true" ]; then
+            #cd ${{github.workspace}}
+            ## There is only one so we don't need a loop but - meh.
+            #for file in build/dist/*.whl; do
+            #  mv "$file" "${file%.whl}_nogil.whl"
+            #done
+          #fi
+
+      # Install the built wheel package so we can test it.
+      - name: Install wheel
+        shell: bash
+        run: |
+          $LOCAL_PYTHON -P -m pip install build/dist/*.whl
         working-directory: ${{github.workspace}}
 
+      # Run all the tests and benchmarks.
       - name: Test
+        shell: bash
         run: |
           mkdir test_dir
           cd test_dir
-          python -m ft_utils.tests.test_run_all
+          $LOCAL_PYTHON -m ft_utils.tests.test_run_all
         working-directory: ${{github.workspace}}

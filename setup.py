@@ -8,7 +8,6 @@ import sys
 import sysconfig
 
 from contextlib import contextmanager
-from typing import Any, Generator
 
 from setuptools import Extension, find_packages, setup
 
@@ -27,24 +26,12 @@ def check_venv() -> None:
         )
 
 
-def patch_out() -> None:
-    """
-    Patch out certain modules to prevent import conflicts on Windows.
-    """
-    # On windows mock gets imported from _msvccompiler which then tries to import asyncio
-    # which causes a name conflict on concurrent. This prevents that.
-    if sys.platform.startswith("win"):
-        sys.modules["unittest"] = type(sys)("unittest")
-        sys.modules["unittest.mock"] = type(sys)("mock")
-
-
 def check_compiler() -> None:
     """
     Check the default compiler for the current platform and fix up name clashed on windows.
 
     Prints the found compiler class.
     """
-    patch_out()
     import distutils.ccompiler as cc
 
     plat = os.name
@@ -213,26 +200,6 @@ def create_setup_cfg(build_dir: str) -> None:
         f.write("packages = find:\n")
 
 
-@contextmanager
-def setup_args(*args: str) -> Generator[None, Any, Any]:  # pyre-ignore
-    """
-    Temporarily set sys.argv to the given arguments.
-
-    Args:
-        *args: Variable number of string arguments.
-
-    Yields:
-        None
-    """
-
-    original_argv = sys.argv[:]
-    sys.argv = ["setup.py"] + list(args)
-    try:
-        yield
-    finally:
-        sys.argv = original_argv
-
-
 def invoke_main() -> None:
     """
     Run the main setup process.
@@ -285,27 +252,26 @@ def invoke_main() -> None:
         long_descr = readme_file.read()
 
     os.chdir("build")
-    with setup_args("bdist_wheel"):
-        setup(
-            name="ft_utils",
-            version="0.1.0",
-            description="A utility library for Free Threaded Python programming",
-            long_description=long_descr,
-            long_description_content_type="text/markdown",
-            author="Meta Platforms, Inc.",
-            author_email="open-source@fb.com",
-            url="https://github.com/facebookincubator/ft_utils",
-            license="MIT",
-            packages=["ft_utils", "ft_utils.native", "ft_utils.tests"],
-            ext_modules=c_extensions,
-            classifiers=[
-                "Development Status :: 1 - alpha/Unstable",
-                "Intended Audience :: Developers",
-                "License :: OSI Approved :: MIT License",
-                "Programming Language :: Python :: 3.12",
-                "Programming Language :: Python :: 3.13",
-            ],
-        )
+    setup(
+        name="ft_utils",
+        version="0.1.0",
+        description="A utility library for Free Threaded Python programming",
+        long_description=long_descr,
+        long_description_content_type="text/markdown",
+        author="Meta Platforms, Inc.",
+        author_email="open-source@fb.com",
+        url="https://github.com/facebookincubator/ft_utils",
+        license="MIT",
+        packages=["ft_utils", "ft_utils.native", "ft_utils.tests"],
+        ext_modules=c_extensions,
+        classifiers=[
+            "Development Status :: 1 - alpha/Unstable",
+            "Intended Audience :: Developers",
+            "License :: OSI Approved :: MIT License",
+            "Programming Language :: Python :: 3.12",
+            "Programming Language :: Python :: 3.13",
+        ],
+    )
 
 
 if __name__ == "__main__":
