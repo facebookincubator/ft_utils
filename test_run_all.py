@@ -13,7 +13,9 @@ def run_test(filename):
     if f_tail != ".py":
         raise ValueError(f"filename `{filename}` is not a Python (.py) file")
     module = f"ft_utils.tests.{f_head}"
-    result = subprocess.run(["python", "-m", module], capture_output=True)
+    result = subprocess.run(
+        [sys.executable, "-m", module], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
     if result.returncode != 0:
         print(f"{module} failed:")
         print(result.stdout.decode())
