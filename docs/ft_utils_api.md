@@ -16,3 +16,8 @@ The [synchronization module](synchronization_api.md) provides specialized lock t
 
 The [local module](local_api.md) provides helper classes to move certain forms of processing from being cross-thread to being local to a thread. These classes are necessary to avoid key bottlenecks that can occur due to cache contention, critical sections, and reference counting in Free Threaded Python.
 
+## Native Code
+
+The [ft_compat](ft_compat.md) header provides backward compatibility for native code.
+
+For developers writing native code (C, C++, Rust, etc.) that interacts with the Python C API, `ft_compat.h` provides a backwards compatibility layer for Free Threading-related APIs. This allows you to write code that takes advantage of Free Threading features, such as atomic operations and critical sections, while still maintaining support for older versions of Python. By using `ft_compat.h`, you can ensure that your native code is compatible with multiple versions of Python, reducing maintenance and testing efforts.
