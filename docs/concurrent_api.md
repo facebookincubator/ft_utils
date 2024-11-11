@@ -219,29 +219,59 @@ A concurrent queue that allows multiple threads to push and pop values.
 
 ### Methods
 
-* `__init__(scaling)`: Initializes a new ConcurrentQueue with the specified scaling factor.
-* `push(value)`: Pushes a value onto the queue.
-* `pop()`: Pops a value from the queue.
+*   `__init__(scaling=None, lock_free=False)`: Initializes a new ConcurrentQueue with the specified scaling factor. If `lock_free` is True, the queue will use a lock-free implementation, which can improve performance in certain scenarios.
+*   `push(value)`: Pushes a value onto the queue. This method is thread-safe and can be called from multiple threads.
+*   `put(value)`: An alias for `push(value)`.
+*   `pop(timeout=None)`: Pops a value from the queue. The method will block until a value is available. If `timeout` is specified, the method will raise an Empty exception if no value is available within the specified time.
+*   `get(timeout=None)`: An alias for `pop(timeout)`.
+*   `pop_local(timeout=None)`: Returns a LocalWrapper object containing the popped value. The behavior is otherwise identical to `pop(timeout)`.
+*   `shutdown(immediate=False)`: Initiates shutdown of the queue. If `immediate` is True, the queue will shut down immediately, otherwise it will wait for any pending operations to complete.
+*   `size()`: Returns the number of elements currently in the queue.
+*   `empty()`: Returns True if the queue is empty, False otherwise.
+
+### Exceptions
+*   `ShutDown` raised to indicate the ConcurrentQueue is shutdown. In Python 3.13 and above `queue.ShutDown` is a type and this Exception will be an aliase for it. In earlier versions of Python concurrent defines its own ShutDown type to allow backward compatibility.
+*   'Empty' raised to indicate a pop/get operation timed out. This is the same as queue.Empty.
 
 ### Notes
 
-* The queue uses a ConcurrentDict to store the values.
-* The `push` method is thread-safe and can be called from multiple threads.
-* The `pop` method returns the next value in the queue, blocking if the queue is empty.
-* If an exception occurs during push, the queue will fail with a RuntimeError.
-* scaling passed to the __init__ function governs the relates to the number of threads it supports with good scaling.
+*   The queue uses a ConcurrentDict to store the values.
+*   If an exception occurs during push, the queue will fail with a RuntimeError.
+*   The `scaling` parameter passed to the `__init__` function governs the number of threads the queue supports with good scaling.
+*   Setting `lock_free` to True can improve performance in scenarios with a large number of readers and writers, as it avoids overloading the kernel with too many locks. However, this comes at the cost of increased CPU usage.
 
-### Example
+#### Lock-Free Implementation
+
+The lock-free implementation of the queue uses a combination of atomic operations and careful synchronization to ensure thread safety without the need for locks. This approach can provide better performance and scalability in certain scenarios, particularly those with a large number of readers and writers. It will tend to consume more CPU in lightly loaded contitions than using the lock based approach.
+
+In general, the lock-free implementation is recommended for scenarios where:
+
+*   There are a large number of readers and writers.
+*   The queue is very large and needs to support a high throughput.
+*   Low latency is critical.
+*   Profiling shows poor scaling hand high load on the kernel.
+
+On the other hand, the lock-based implementation is recommended for scenarios where:
+
+*   There are a small number of readers and writers.
+*   The queue is relatively small and does not require high throughput.
+
+#### Example
 
 ```python
 from ft_utils.concurrent import ConcurrentQueue
 
 queue = ConcurrentQueue()
+
 queue.push('value0')
-queue.push('value1')
+queue.put('value1')  # equivalent to push
 queue.push('value2')
+queue.push('value3')
 
 print(queue.pop())  # prints 'value0'
-print(queue.pop())  # prints 'value1'
-print(queue.pop())  # prints 'value2'
+print(queue.get())  # equivalent to pop
+print(queue.pop_local())  # returns a LocalWrapper object
+queue.shutdown()
+# Raises ShutDown
+queue.pop()
 ```
