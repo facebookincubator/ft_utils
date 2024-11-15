@@ -2,10 +2,11 @@
 
 # pyre-strict
 
+import os
 import threading
 import time
 from collections.abc import Iterator
-from queue import Empty
+from queue import Empty, Full
 
 try:
     from queue import ShutDown  # type: ignore
@@ -121,6 +122,10 @@ class ConcurrentGatheringIterator:
 class ConcurrentQueue:
     """
     A thread-safe queue implementation that allows concurrent access and modification.
+
+    Note:
+        ConcurrentQueue deliberately does not follow the same API as queue.Queue. To get a replacement
+        for queue.Queue use StdConcurrentQueue.
     """
 
     _SHUTDOWN = 1
@@ -204,12 +209,16 @@ class ConcurrentQueue:
         """
         Removes and returns an element from the front of the queue.
         Args:
-            timeout (float | None, optional): The maximum time to wait for an element to become available. Defaults to None.
+            timeout (float | None, optional): The maximum time to wait for an element to become available.
+            Defaults to None.
         Returns:
             Any: The removed element.
         Raises:
             Empty: If the queue is empty and the timeout expires.
             ShutDown: If the queue is shutting down - i.e. shutdown() has been called.
+
+        Note:
+            Timeout can be 0 but this is not recommended; if you want non-blocking behaviour use StdConcurrentQueue.
         """
         next_key = self._outkey.incr()
         _flags = LocalWrapper(self._flags)
@@ -269,7 +278,7 @@ class ConcurrentQueue:
                             raise RuntimeError("Queue failed")
                         if timeout is None:
                             _cond.wait()
-                        elif not _cond.wait(timeout):
+                        elif timeout == 0.0 or not _cond.wait(timeout):
                             timed_out = True
                             break
                 if timed_out:
@@ -370,14 +379,94 @@ class ConcurrentQueue:
         """
         return LocalWrapper(self.pop(timeout))
 
-    def get(self, timeout: float | None = None) -> Any:  # type: ignore
-        """
-        An aliase for pop. See the docs for pop().
-        """
-        return self.pop(timeout)
 
-    def put(self, value: Any) -> None:  # type: ignore
-        """
-        An alias for push(value=Any).
-        """
-        self.push(value)
+class StdConcurrentQueue(ConcurrentQueue):
+    """
+    A class which is a drop in replacement for queue.Queue and behaves as a lock free ConcurrentQueue but supports
+    the features of queue.Queue which ConcurrentQueue does not. These extra features may add some overhead to
+    operation and so this Queue is only preferred when an exact replacement for queue.Queue is required.
+
+    Also note that there might be subtle differences in the way sequencing behaves in a multi-threaded environment
+    compared to queue.Queue simply because this is a (mainly) lock free algorithm.
+    """
+
+    def __init__(self, maxsize: int = 0) -> None:
+        osc = os.cpu_count()
+        if osc:
+            super().__init__(scaling=max(1, osc // 2), lock_free=True)
+        else:
+            super().__init__(lock_free=True)
+
+        self._maxsize: int = max(maxsize, 0)
+        self._active_tasks = AtomicInt64(0)
+
+    def qsize(self) -> int:
+        return self.size()
+
+    def get(self, block: bool = True, timeout: float | None = None) -> Any:  # type: ignore
+        if block and timeout != 0.0:
+            return self.pop(timeout=timeout)
+        else:
+            # Use this to attempt to avoid excessive placeholder creation.
+            if self.size() > 0:
+                return self.pop(timeout=0.0)
+            else:
+                raise Empty
+
+    def full(self) -> bool:
+        _maxsize = self._maxsize
+        return bool(_maxsize and self.size() >= _maxsize)
+
+    def put(self, item: Any, block: bool = True, timeout: float | None = None) -> None:  # type: ignore
+
+        if block and self._maxsize and self.full():
+            _flags = LocalWrapper(self._flags)
+            _shutdown = self._SHUTDOWN
+            _sleep = LocalWrapper(time.sleep)
+            _now = LocalWrapper(time.monotonic)
+            start = _now()
+            if timeout is not None:
+                end_time = start + timeout
+            else:
+                end_time = None
+            pause_time = start + 0.05
+            while self.full():
+                it_time = _now()
+                if _flags & _shutdown:
+                    raise ShutDown
+                if end_time is not None and it_time > end_time:
+                    raise Full
+                if it_time < pause_time:
+                    _sleep(0)
+                else:
+                    _sleep(0.05)
+        else:
+            if self.full():
+                raise Full
+
+        self.push(item)
+        # The push succeeded so we can do this here.
+        self._active_tasks.incr()
+
+    def put_nowait(self, item: Any) -> None:  # type: ignore
+        return self.put(item, block=False)
+
+    def get_nowait(self) -> Any:  # type: ignore
+        return self.get(block=False)
+
+    def task_done(self) -> None:
+        self._active_tasks.decr()
+
+    def join(self) -> None:
+        _sleep = LocalWrapper(time.sleep)
+        _now = LocalWrapper(time.monotonic)
+        _flags = LocalWrapper(self._flags)
+        _shut_now = self._SHUT_NOW
+        _active_tasks = LocalWrapper(self._active_tasks)
+        start = _now()
+        pause_time = start + 0.05
+        while _active_tasks and not (_flags & _shut_now):
+            if _now() < pause_time:
+                _sleep(0)
+            else:
+                _sleep(0.05)

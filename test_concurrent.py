@@ -402,23 +402,6 @@ class TestConcurrentQueue(unittest.TestCase):
             t.start()
             self.assertEqual(q.pop(), 10)
 
-    def test_pop_timeout_expires(self):
-        q = self._get_queue()
-        f = concurrent.AtomicFlag(False)
-
-        def worker():
-            f.set(True)
-            time.sleep(1)
-            q.push(10)
-
-        t = threading.Thread(target=worker)
-        t.start()
-        while not f:
-            pass
-        with self.assertRaises(queue.Empty):
-            q.pop(timeout=0.5)
-        t.join()
-
     def test_pop(self):
         q = self._get_queue()
 
@@ -431,12 +414,7 @@ class TestConcurrentQueue(unittest.TestCase):
         self.assertEqual(q.pop(), 10)
         t.join()
 
-    def test_get(self):
-        q = self._get_queue()
-        q.push(10)
-        self.assertEqual(q.get(), 10)
-
-    def test_get_timeout(self):
+    def test_pop_timeout_sleep(self):
         q = self._get_queue()
         f = concurrent.AtomicFlag(False)
 
@@ -449,10 +427,10 @@ class TestConcurrentQueue(unittest.TestCase):
         t.start()
         while not f:
             pass
-        self.assertEqual(q.get(timeout=1), 10)
+        self.assertEqual(q.pop(timeout=1), 10)
         t.join()
 
-    def test_get_timeout_expires(self):
+    def test_pop_timeout_expires(self):
         q = self._get_queue()
         f = concurrent.AtomicFlag(False)
 
@@ -466,10 +444,10 @@ class TestConcurrentQueue(unittest.TestCase):
         while not f:
             pass
         with self.assertRaises(queue.Empty):
-            q.get(timeout=0.1)
+            q.pop(timeout=0.1)
         t.join()
 
-    def test_get_waiting(self):
+    def test_pop_waiting(self):
         q = self._get_queue()
 
         def worker():
@@ -478,7 +456,7 @@ class TestConcurrentQueue(unittest.TestCase):
 
         t = threading.Thread(target=worker)
         t.start()
-        self.assertEqual(q.get(), 10)
+        self.assertEqual(q.pop(), 10)
         t.join()
 
     def test_shutdown(self):
@@ -487,7 +465,7 @@ class TestConcurrentQueue(unittest.TestCase):
         q.shutdown()
         with self.assertRaises(concurrent.ShutDown):
             q.push(20)
-        self.assertEqual(q.get(), 10)
+        self.assertEqual(q.pop(), 10)
         with self.assertRaises(concurrent.ShutDown):
             q.pop()
 
@@ -579,6 +557,174 @@ class TestConcurrentQueueLockFree(TestConcurrentQueue):
 
     def _get_queue(self):
         return concurrent.ConcurrentQueue(lock_free=True)
+
+
+class TestStdConcurrentQueue(unittest.TestCase):
+
+    def _get_queue(self, maxsize=0):
+        return concurrent.StdConcurrentQueue(maxsize)
+
+    def test_smoke(self):
+        q = self._get_queue()
+        q.put(10)
+        self.assertEqual(q.get(), 10)
+
+    def test_multiple_put(self):
+        q = self._get_queue()
+        for i in range(10):
+            q.put(i)
+        for i in range(10):
+            self.assertEqual(q.get(), i)
+
+    def test_multiple_threads(self):
+        q = self._get_queue()
+        flag = concurrent.AtomicFlag(False)
+
+        def worker(n):
+            flag.set(True)
+            for i in range(n):
+                q.put(i)
+
+        threads = [threading.Thread(target=worker, args=(10,)) for _ in range(10)]
+        for t in threads:
+            t.start()
+        while not flag:
+            pass
+        for t in threads:
+            t.join()
+        for _ in range(100):
+            x = q.get()
+            self.assertIn(x, list(range(10)))
+
+    def test_get_timeout(self):
+        q = self._get_queue()
+        flag = concurrent.AtomicFlag(False)
+
+        def worker():
+            flag.set(True)
+            time.sleep(0.1)
+            q.put(10)
+
+        t = threading.Thread(target=worker)
+        t.start()
+        while not flag:
+            pass
+        self.assertEqual(q.get(timeout=1), 10)
+        t.join()
+
+    def test_get_timeout_expires(self):
+        q = self._get_queue()
+        flag = concurrent.AtomicFlag(False)
+
+        def worker():
+            flag.set(True)
+            time.sleep(0.5)
+            q.put(10)
+
+        t = threading.Thread(target=worker)
+        t.start()
+        while not flag:
+            pass
+        with self.assertRaises(queue.Empty):
+            q.get(timeout=0.1)
+        t.join()
+
+    def test_get_waiting(self):
+        q = self._get_queue()
+        flag = concurrent.AtomicFlag(False)
+
+        def worker():
+            flag.set(True)
+            time.sleep(0.1)
+            q.put(10)
+
+        t = threading.Thread(target=worker)
+        t.start()
+        while not flag:
+            pass
+        self.assertEqual(q.get(), 10)
+        t.join()
+
+    def test_put_nowait(self):
+        q = self._get_queue(maxsize=1)
+        q.put_nowait(10)
+        with self.assertRaises(queue.Full):
+            q.put_nowait(20)
+
+    def test_get_nowait(self):
+        q = self._get_queue()
+        q.put(10)
+        self.assertEqual(q.get_nowait(), 10)
+        with self.assertRaises(queue.Empty):
+            q.get_nowait()
+
+    def test_empty_queue(self):
+        q = self._get_queue()
+        flag = concurrent.AtomicFlag(False)
+
+        def worker():
+            flag.set(True)
+            time.sleep(0.1)
+            q.put(10)
+
+        for _ in range(5):
+            t = threading.Thread(target=worker)
+            t.start()
+            while not flag:
+                pass
+            self.assertEqual(q.get(), 10)
+
+    def test_qsize(self):
+        q = self._get_queue()
+        self.assertEqual(q.qsize(), 0)
+        q.put(10)
+        self.assertEqual(q.qsize(), 1)
+        q.get()
+        self.assertEqual(q.qsize(), 0)
+
+    def test_full(self):
+        q = self._get_queue(maxsize=1)
+        self.assertFalse(q.full())
+        q.put(10)
+        self.assertEqual(q.size(), 1)
+        self.assertEqual(q._maxsize, 1)
+        self.assertTrue(q.full())
+
+    def test_task_done(self):
+        q = self._get_queue()
+        q.put(10)
+        self.assertEqual(10, q.get())
+        q.task_done()
+        self.assertEqual(int(q._active_tasks), 0)
+        q.join()
+
+    def test_join(self):
+        q = self._get_queue()
+
+        def worker():
+            q.get()
+            q.task_done()
+
+        ts = [threading.Thread(target=worker) for _ in range(10)]
+        for t in ts:
+            t.start()
+            q.put(10)
+        q.join()
+        t.join()
+        self.assertEqual(int(q._active_tasks), 0)
+
+    def test_full_shutdown(self):
+        q = self._get_queue(1)
+        q.put(23)
+
+        def worker():
+            q.shutdown()
+            q.get()
+
+        t = threading.Thread(target=worker)
+        t.start()
+        with self.assertRaises(concurrent.ShutDown):
+            q.put(32)
 
 
 class TestConcurrentGatheringIterator(unittest.TestCase):

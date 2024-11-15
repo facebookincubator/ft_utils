@@ -221,9 +221,7 @@ A concurrent queue that allows multiple threads to push and pop values.
 
 *   `__init__(scaling=None, lock_free=False)`: Initializes a new ConcurrentQueue with the specified scaling factor. If `lock_free` is True, the queue will use a lock-free implementation, which can improve performance in certain scenarios.
 *   `push(value)`: Pushes a value onto the queue. This method is thread-safe and can be called from multiple threads.
-*   `put(value)`: An alias for `push(value)`.
 *   `pop(timeout=None)`: Pops a value from the queue. The method will block until a value is available. If `timeout` is specified, the method will raise an Empty exception if no value is available within the specified time.
-*   `get(timeout=None)`: An alias for `pop(timeout)`.
 *   `pop_local(timeout=None)`: Returns a LocalWrapper object containing the popped value. The behavior is otherwise identical to `pop(timeout)`.
 *   `shutdown(immediate=False)`: Initiates shutdown of the queue. If `immediate` is True, the queue will shut down immediately, otherwise it will wait for any pending operations to complete.
 *   `size()`: Returns the number of elements currently in the queue.
@@ -275,3 +273,14 @@ queue.shutdown()
 # Raises ShutDown
 queue.pop()
 ```
+
+## StdConcurrentQueue
+
+This follows the same API as [queue.Queue](https://docs.python.org/3/library/queue.html#queue.Queue). For simple applications StdConcurrentQueue will work as a drop in replacement for queue.Queue. However, there are subtle differences:
+
+*   StdConcurrentQueue will use a very small amount of CPU time even when not processing elements.
+*   This implementation has weeker FIFO guaratees than queue.Queue which might cause subtle issues in some applications.
+*   StdConcurrentQueue will use a release memory in a different pattern than queue.Queue.
+*   The maxsize is not as strictly guaranteed. If maxsize is set and a large number of threads attempt to fill the queue beyond maxsize then a small overfill might occur due to the lack of a lock to prevent this race condition.
+
+Therefore, in complex applications it may be a better approach to mindfully replace highly contended queue.Queue instances with StdConcurrentQueue. In this case it is also better to use the simpler ConcurrentQueue where possible.
