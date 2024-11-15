@@ -23,7 +23,7 @@ By providing a backwards compatibility layer, `ft_compat.h` enables developers t
 
 ## How to use ft_compat.h
 
-To use `ft_compat.h`, simply include the header file in your native code project. The macros and inline functions defined in the header file will be used automatically when building against older versions of Python.
+To use `ft_compat.h`, simply include the header file in your native code project. The macros and inline functions defined in the header file will be used automatically when building against older versions of Python. Note that these macros, in previous versions of Python, will not be atomic. There will be no performance overhead of using these for older version of Python. This design choice is because we assume the GIL will ensure thread safety and therefore the overhead of atomic operations is pointless.
 
 For example:
 ```C

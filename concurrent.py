@@ -383,7 +383,7 @@ class ConcurrentQueue:
 class StdConcurrentQueue(ConcurrentQueue):
     """
     A class which is a drop in replacement for queue.Queue and behaves as a lock free ConcurrentQueue but supports
-    the features of queue.Queue which ConcurrentQueue does not. These extra features may add some overhead to
+    the features of queue.Queue (which ConcurrentQueue does not). These extra features may add some overhead to
     operation and so this Queue is only preferred when an exact replacement for queue.Queue is required.
 
     Also note that there might be subtle differences in the way sequencing behaves in a multi-threaded environment

@@ -248,7 +248,7 @@ typedef struct {
     if (!result || value != new_value) {                                  \
       PyErr_SetString(                                                    \
           PyExc_AssertionError,                                           \
-          "_Py_atomic_" #name #suffix " failed succedd");                 \
+          "_Py_atomic_" #name #suffix " failed succeed");                 \
       return NULL;                                                        \
     }                                                                     \
     value = (type)123;                                                    \
@@ -277,6 +277,8 @@ typedef struct {
 
 ATOMIC_OPS(DEFINE_ATOMIC_TEST_FUNC);
 
+/* One of the fence methods is missing from the beta version of ftpython
+ * in 3.13. */
 #if defined(PY_MAJOR_VERSION) && PY_MAJOR_VERSION == 3 &&  \
     defined(PY_MINOR_VERSION) && PY_MINOR_VERSION == 13 && \
     defined(PY_RELEASE_LEVEL) && PY_RELEASE_LEVEL != PY_RELEASE_LEVEL_FINAL

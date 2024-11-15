@@ -262,16 +262,20 @@ from ft_utils.concurrent import ConcurrentQueue
 queue = ConcurrentQueue()
 
 queue.push('value0')
-queue.put('value1')  # equivalent to push
+queue.push('value1')
 queue.push('value2')
 queue.push('value3')
+queue.push('value4')
 
 print(queue.pop())  # prints 'value0'
-print(queue.get())  # equivalent to pop
+print(queue.pop(timeout=0.1))
 print(queue.pop_local())  # returns a LocalWrapper object
 queue.shutdown()
+queue.pop()
 # Raises ShutDown
 queue.pop()
+# Raises ShutDown
+queue.push('value5')
 ```
 
 ## StdConcurrentQueue
@@ -279,8 +283,8 @@ queue.pop()
 This follows the same API as [queue.Queue](https://docs.python.org/3/library/queue.html#queue.Queue). For simple applications StdConcurrentQueue will work as a drop in replacement for queue.Queue. However, there are subtle differences:
 
 *   StdConcurrentQueue will use a very small amount of CPU time even when not processing elements.
-*   This implementation has weeker FIFO guaratees than queue.Queue which might cause subtle issues in some applications.
-*   StdConcurrentQueue will use a release memory in a different pattern than queue.Queue.
+*   This implementation has weaker FIFO guaratees than queue.Queue, which might cause subtle issues in some applications.
+*   StdConcurrentQueue will use and release memory in a different pattern than queue.Queue.
 *   The maxsize is not as strictly guaranteed. If maxsize is set and a large number of threads attempt to fill the queue beyond maxsize then a small overfill might occur due to the lack of a lock to prevent this race condition.
 
 Therefore, in complex applications it may be a better approach to mindfully replace highly contended queue.Queue instances with StdConcurrentQueue. In this case it is also better to use the simpler ConcurrentQueue where possible.
