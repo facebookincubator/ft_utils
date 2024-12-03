@@ -1,0 +1,6 @@
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+
+# pyre-unsafe
+
+def register_native_destructor(var: int, destructor: int) -> None: ...
+def unregister_native_destructor(var: int) -> bool: ...
