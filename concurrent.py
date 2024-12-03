@@ -53,9 +53,9 @@ class ConcurrentGatheringIterator:
 
     def __init__(self, scaling: int | None = None) -> None:
         if scaling is not None:
-            self._dict: ConcurrentDict = ConcurrentDict(scaling)
+            self._dict: ConcurrentDict[int, object] = ConcurrentDict(scaling)
         else:
-            self._dict: ConcurrentDict = ConcurrentDict()
+            self._dict: ConcurrentDict[int, object] = ConcurrentDict()
         self._cond = threading.Condition()
         # We probably don't need an atomic flag but it
         # it is safe and clear to use one here.
@@ -140,9 +140,9 @@ class ConcurrentQueue:
             lock_free (bool, optional): Whether the queue should use lock-free operations. Defaults to False.
         """
         if scaling is not None:
-            self._dict: ConcurrentDict = ConcurrentDict(scaling)
+            self._dict: ConcurrentDict[int, object] = ConcurrentDict(scaling)
         else:
-            self._dict: ConcurrentDict = ConcurrentDict()
+            self._dict: ConcurrentDict[int, object] = ConcurrentDict()
         self._cond = threading.Condition()
         self._flags = AtomicInt64(0)
         self._inkey = AtomicInt64(0)
