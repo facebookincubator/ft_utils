@@ -126,6 +126,24 @@ static int ConcurrentDict_contains(ConcurrentDictObject* self, PyObject* key) {
   return PyDict_Contains(self->buckets[index], key);
 }
 
+static PyObject* ConcurrentDict_as_dict(
+    ConcurrentDictObject* self,
+    PyObject* Py_UNUSED(args)) {
+  PyObject* dict = PyDict_New();
+  if (!dict) {
+    return NULL;
+  }
+  for (Py_ssize_t i = 0; i < self->size; i++) {
+    if (self->buckets[i]) {
+      if (PyDict_Update(dict, self->buckets[i]) != 0) {
+        Py_DECREF(dict);
+        return NULL;
+      }
+    }
+  }
+  return dict;
+}
+
 static int ConcurrentDict_traverse(
     ConcurrentDictObject* self,
     visitproc visit,
@@ -147,6 +165,14 @@ static PySequenceMethods ConcurrentDict_sequence = {
     .sq_contains = (objobjproc)ConcurrentDict_contains,
 };
 
+static PyMethodDef ConcurrentDict_methods[] = {
+    {"as_dict",
+     (PyCFunction)ConcurrentDict_as_dict,
+     METH_NOARGS,
+     PyDoc_STR(
+         "Create a dict from the key value pairs in this ConcurrentDict. Not thread consistent.")},
+    {NULL, NULL, 0, NULL}};
+
 static PyTypeObject ConcurrentDictType = {
     PyVarObject_HEAD_INIT(NULL, 0).tp_name = "_concurrent.ConcurrentDict",
     .tp_doc = "Concurrent Dictionary",
@@ -155,6 +181,7 @@ static PyTypeObject ConcurrentDictType = {
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .tp_as_mapping = &ConcurrentDict_mapping,
     .tp_as_sequence = &ConcurrentDict_sequence,
+    .tp_methods = ConcurrentDict_methods,
     .tp_new = ConcurrentDict_new,
     .tp_dealloc = (destructor)ConcurrentDict_dealloc,
     .tp_traverse = (traverseproc)ConcurrentDict_traverse,

@@ -108,6 +108,15 @@ class TestConcurrentDict(unittest.TestCase):
         del dct[legal]
         self.assertFalse(legal in dct)
 
+    def test_as_dict(self):
+        cdct = concurrent.ConcurrentDict()
+        for i in range(1024):
+            cdct[i] = -i
+        dct = cdct.as_dict()
+        self.assertIs(type(dct), dict)
+        for i in range(1024):
+            self.assertEqual(dct[i], -i)
+
 
 class TestConcurrentDictGC(unittest.TestCase):
     def setUp(self):
