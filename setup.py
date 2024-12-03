@@ -158,14 +158,15 @@ def copy_files(
 
 def create_init_py(module_dir: str) -> None:
     """
-    Create an empty __init__.py file in the given module directory.
+    Create an empty __init__.py file in the given module directory if none exists.
 
     Args:
         module_dir: The module directory path.
     """
     init_py_path = os.path.join(module_dir, "__init__.py")
-    with open(init_py_path, "w"):
-        pass
+    if not os.path.exists(init_py_path):
+        with open(init_py_path, "w"):
+            pass
 
 
 def create_license(script_dir: str, build_dir: str) -> None:

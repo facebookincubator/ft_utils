@@ -6,6 +6,8 @@
 import threading
 import unittest
 
+import ft_utils
+
 from ft_utils._test_weave import (  # @manual
     get_destructor_called_1,
     get_destructor_called_2,
@@ -20,6 +22,7 @@ from ft_utils._test_weave import (  # @manual
 
 class TestTLSManagement(unittest.TestCase):
     def setUp(self):
+        ft_utils.ENABLE_EXPERIMENTAL = True
         reset()
 
     def test_register_destructor_1(self):

@@ -1,5 +1,7 @@
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 
+# pyre-strict
+
 def reset() -> None:
     """Reset the destructor test values."""
     ...
