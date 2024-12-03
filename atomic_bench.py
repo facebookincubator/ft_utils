@@ -40,7 +40,7 @@ class LockedReference:
 class ReferenceBenchmarkProvider(BenchmarkProvider):
     def __init__(self, operations: int) -> None:
         self._operations = operations
-        self._atomic_ref = AtomicReference(1)
+        self._atomic_ref = AtomicReference(1)  # pyre-fixme[4]
         self._locked_ref = LockedReference(1)
 
     def benchmark_atomic_set(self) -> None:
