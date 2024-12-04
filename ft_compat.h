@@ -4,6 +4,12 @@
 #define FT_COMPAT_H
 #include <Python.h>
 
+#if PY_VERSION_HEX >= 0x030D0000
+#define _PY_NOGIL_MODULE_SLOT {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+#else
+#define _PY_NOGIL_MODULE_SLOT
+#endif
+
 #ifndef Py_ATOMIC_H
 #define Py_BEGIN_CRITICAL_SECTION(self) {
 #define Py_END_CRITICAL_SECTION() }

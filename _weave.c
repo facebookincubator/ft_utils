@@ -1,5 +1,6 @@
 /* Copyright (c) Meta Platforms, Inc. and affiliates. */
 #include <Python.h>
+#include "ft_compat.h"
 #include "ft_weave.h"
 
 /* Thead local storge definition.
@@ -259,9 +260,7 @@ static int exec_weave_module(PyObject* module) {
 
 static struct PyModuleDef_Slot weave_module_slots[] = {
     {Py_mod_exec, exec_weave_module},
-#if PY_VERSION_HEX >= 0x030D0000
-    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
-#endif
+    _PY_NOGIL_MODULE_SLOT // NOLINT
     {0, NULL} /* sentinel */
 };
 

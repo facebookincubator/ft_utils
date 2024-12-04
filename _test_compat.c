@@ -342,11 +342,7 @@ static int exec_test_compat_module(PyObject* module) {
 
 static struct PyModuleDef_Slot test_compat_module_slots[] = {
     {Py_mod_exec, exec_test_compat_module},
-
-#if PY_VERSION_HEX >= 0x030D0000
-    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
-#endif
-
+    _PY_NOGIL_MODULE_SLOT // NOLINT
     {0, NULL} /* sentinel */
 };
 
