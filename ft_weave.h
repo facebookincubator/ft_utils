@@ -22,8 +22,10 @@ to Thead Local Storage. */
 
 #ifdef _WIN32
 typedef DWORD wvls_key_t;
+#define weave_local __declspec(thread)
 #else
 typedef pthread_key_t wvls_key_t;
+#define weave_local _Thread_local
 #endif
 
 /* A function called with a value of a thread local variable which is assumed to
@@ -104,7 +106,7 @@ static inline PyObject* _py_get_function(
 // NOLINTNEXTLINE
 static int _py_register_wvls_destructor(
     void** wvls_var,
-    void (*wvls_destructor)(void*)) {
+    wvls_destructor_t wvls_destructor) {
   PyObject* p_var = NULL;
   PyObject* p_destructor = NULL;
   PyObject* p_func = NULL;

@@ -196,8 +196,9 @@ int unregister_wvls_destructor(void** wvls_variable_ptr) {
         previous->next = node->next;
       }
       found = 1;
+      wvls_destructor_node_t* temp = node;
       node = node->next;
-      free(node);
+      free(temp);
     } else {
       previous = node;
       node = node->next;

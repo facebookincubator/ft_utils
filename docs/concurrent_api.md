@@ -9,6 +9,7 @@ A concurrently accessible dictionary.
 ### Methods
 
 * `__init__(scaling=17)`: Initializes a new ConcurrentDict with the specified number of concurrent structures. This relates to the number of threads it supports with good scaling. For optimal performance, this value should be close to the number of cores on the machine. However, under or over estimating this value by a factor of 2 or even more does not have a huge impact on performance.
+* `as_dict()`: Creates a dict from the key value pairs in this ConcurrentDict. This is not thread consistent; it is safe to call whilst the ConcurrentDict is being updated, however, which key/value pairs will be copied over is not defined.
 
 ### Operators
 

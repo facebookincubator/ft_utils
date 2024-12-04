@@ -1,6 +1,5 @@
 /* Copyright (c) Meta Platforms, Inc. and affiliates. */
 
-#include <threads.h>
 #include "ft_utils.h"
 #include "ft_weave.h"
 
@@ -10,8 +9,8 @@ static int destructor_called_1 = 0;
 static int destructor_called_2 = 0;
 static int tls_check_1 = 0;
 static int tls_check_2 = 0;
-static thread_local void* tls_1 = NULL;
-static thread_local void* tls_2 = NULL;
+static weave_local void* tls_1 = NULL;
+static weave_local void* tls_2 = NULL;
 
 static PyObject* test_reset(
     PyObject* Py_UNUSED(self),

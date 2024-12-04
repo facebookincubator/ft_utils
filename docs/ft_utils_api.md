@@ -21,3 +21,5 @@ The [local module](local_api.md) provides helper classes to move certain forms o
 The [ft_compat](ft_compat.md) header provides backward compatibility for native code.
 
 For developers writing native code (C, C++, Rust, etc.) that interacts with the Python C API, `ft_compat.h` provides a backwards compatibility layer for Free Threading-related APIs. This allows you to write code that takes advantage of Free Threading features, such as atomic operations and critical sections, while still maintaining support for older versions of Python. By using `ft_compat.h`, you can ensure that your native code is compatible with multiple versions of Python, reducing maintenance and testing efforts.
+
+The [ft_weave](weave_api.md) header provides native access to advanced thread based features which are useful for scaling to high thread counts or controlling how threads behave on particular hardware and/or operating systems.
