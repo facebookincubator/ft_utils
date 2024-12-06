@@ -129,7 +129,9 @@ class MergeSortBenchmark:
             os.sched_setaffinity(0, list(range(int(self.n_cpus))))
         except AttributeError:
             pass
-        gil_enabled: bool = getattr(sys, "_is_gil_enabled", lambda: True)()  # pyre-ignore[16]
+        gil_enabled: bool = getattr(
+            sys, "_is_gil_enabled", lambda: True
+        )()  # pyre-ignore[16]
         start_time: float = time.time()
         self.merge_sort(self.target, 0, self.max_size - 1)
         end_time: float = time.time()

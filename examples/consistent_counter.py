@@ -92,7 +92,6 @@ def single_multiply_consistent() -> None:
 
 
 def invoke_main() -> None:
-
     print_results("simple", single_multiply_simple)
     print()
 

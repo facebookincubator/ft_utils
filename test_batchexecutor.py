@@ -21,7 +21,6 @@ def failing_callable():
 
 
 class TestBatchExecutor(unittest.TestCase):
-
     def test_successful_initialization_and_loading(self):
         executor = BatchExecutor(simple_callable, 5)
         self.assertEqual(executor.load(), "result")

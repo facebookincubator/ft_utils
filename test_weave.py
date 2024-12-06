@@ -28,7 +28,6 @@ class TestTLSManagement(unittest.TestCase):
         reset()
 
     def test_register_destructor_1(self):
-
         def thread_func():
             register_destructor_1()
             pass
@@ -53,7 +52,6 @@ class TestTLSManagement(unittest.TestCase):
         self.assertEqual(get_destructor_called_1(), 0)
 
     def test_register_destructor_2(self):
-
         def thread_func():
             register_destructor_2()
             pass

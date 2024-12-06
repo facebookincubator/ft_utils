@@ -36,7 +36,9 @@ def check_compiler() -> None:
 
     plat = os.name
     compiler = cc.get_default_compiler(plat)
-    (module_name, class_name, long_description) = cc.compiler_class[compiler]  # pyre-ignore
+    (module_name, class_name, long_description) = cc.compiler_class[
+        compiler
+    ]  # pyre-ignore
 
     module_name = "distutils." + module_name
     __import__(module_name)
@@ -245,7 +247,10 @@ def invoke_main() -> None:
             Extension(
                 f"ft_utils.{module_name}",
                 source_files,
-                include_dirs=[include_dir, os.path.join(include_dir, "internal")],  # pyre-ignore
+                include_dirs=[
+                    include_dir,
+                    os.path.join(include_dir, "internal"),
+                ],  # pyre-ignore
             )
         )
 

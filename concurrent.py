@@ -24,7 +24,6 @@ from ft_utils.local import LocalWrapper
 
 
 class AtomicFlag:
-
     def __init__(self, value: bool) -> None:
         self._int64 = AtomicInt64(-1 if value else 0)
 
@@ -240,7 +239,6 @@ class ConcurrentQueue:
         # If we can reasonably expect the key to be in the queue then don't do any
         # further logic - just go get it.
         if _in_key < next_key:
-
             if self._flags & _shutdown:
                 raise ShutDown
 
@@ -317,7 +315,9 @@ class ConcurrentQueue:
         def __repr__(self) -> str:
             return f"_PlaceHolder({self.key})"
 
-    def _load_placeholder(self, holder: _PlaceHolder, timeout: float | None, start: float) -> Any:  # type: ignore
+    def _load_placeholder(
+        self, holder: _PlaceHolder, timeout: float | None, start: float
+    ) -> Any:  # type: ignore
         # We simplify the logic so we just check if the key is in the dict and wait lock free if there is a timeout
         # or we are inherently lock free. The aim is to reduce any chance of complex interactions of the condition
         # and the use of place holders.
@@ -418,7 +418,6 @@ class StdConcurrentQueue(ConcurrentQueue):
         return bool(_maxsize and self.size() >= _maxsize)
 
     def put(self, item: Any, block: bool = True, timeout: float | None = None) -> None:  # type: ignore
-
         if block and self._maxsize and self.full():
             _flags = LocalWrapper(self._flags)
             _shutdown = self._SHUTDOWN

@@ -117,12 +117,10 @@ def invoke_main() -> None:
             to_execute = fib_tasks
 
         case "fast_threads":
-
             executor_type = concurrent.futures.ThreadPoolExecutor
             to_execute = fib_queue
 
         case "processes":
-
             executor_type = concurrent.futures.ProcessPoolExecutor
             to_execute = fib_tasks
 

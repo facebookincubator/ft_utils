@@ -333,7 +333,6 @@ class BreakingDict(dict):
 
 
 class TestConcurrentQueue(unittest.TestCase):
-
     def _get_queue(self):
         return concurrent.ConcurrentQueue()
 
@@ -563,13 +562,11 @@ class TestConcurrentQueue(unittest.TestCase):
 
 
 class TestConcurrentQueueLockFree(TestConcurrentQueue):
-
     def _get_queue(self):
         return concurrent.ConcurrentQueue(lock_free=True)
 
 
 class TestStdConcurrentQueue(unittest.TestCase):
-
     def _get_queue(self, maxsize=0):
         return concurrent.StdConcurrentQueue(maxsize)
 
