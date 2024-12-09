@@ -315,9 +315,10 @@ class ConcurrentQueue:
         def __repr__(self) -> str:
             return f"_PlaceHolder({self.key})"
 
+    # pyre-ignore
     def _load_placeholder(
         self, holder: _PlaceHolder, timeout: float | None, start: float
-    ) -> Any:  # type: ignore
+    ) -> Any:
         # We simplify the logic so we just check if the key is in the dict and wait lock free if there is a timeout
         # or we are inherently lock free. The aim is to reduce any chance of complex interactions of the condition
         # and the use of place holders.
