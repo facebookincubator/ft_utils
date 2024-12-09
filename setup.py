@@ -22,9 +22,8 @@ def check_compiler() -> None:
 
     plat = os.name
     compiler = cc.get_default_compiler(plat)
-    (module_name, class_name, long_description) = cc.compiler_class[
-        compiler
-    ]  # pyre-ignore
+    # pyre-ignore
+    (module_name, class_name, long_description) = cc.compiler_class[compiler]
 
     module_name = "distutils." + module_name
     __import__(module_name)
@@ -234,8 +233,9 @@ def invoke_main() -> None:
                 source_files,
                 include_dirs=[
                     include_dir,
+                    # pyre-ignore
                     os.path.join(include_dir, "internal"),
-                ],  # pyre-ignore
+                ],
             )
         )
 
