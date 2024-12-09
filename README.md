@@ -45,13 +45,25 @@ out the call to check_env() in setup.py.
 Once you have everything in place, please execute setup.py as a python script:
 
 ```
-python setup.py bdist_wheel
+python -P setup.py bdist_wheel
 ```
 
 If this does not work due to networking then you might need use a proxy; for example:
 
 ```
 https_proxy=http://fwdproxy:8080 python setup.py
+```
+
+To install just install the wheel; for example on Windows:
+
+```
+python -m pip install build\dist\ft_utils-0.1.0-cp314-cp314-win_amd64.whl
+```
+
+Or:
+
+```
+python -m pip install --force-reinstall build\dist\ft_utils-0.1.0-cp314-cp314-win_amd64.whl
 ```
 
 ### CI

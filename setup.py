@@ -12,20 +12,6 @@ from contextlib import contextmanager
 from setuptools import Extension, find_packages, setup
 
 
-def check_venv() -> None:
-    """
-    Check if the script is running in a virtual environment.
-
-    Raises:
-        RuntimeError: If not running in a virtual environment and not on github.
-    """
-    if (not os.environ.get("GITHUB_ACTIONS")) and sys.prefix == sys.base_prefix:
-        raise RuntimeError(
-            "setpy.py must run in a virtualenv with the correct version "
-            + "of python against which you will build the wheel."
-        )
-
-
 def check_compiler() -> None:
     """
     Check the default compiler for the current platform and fix up name clashed on windows.
@@ -77,7 +63,6 @@ def check_setup() -> None:
     """
     Run setup checks (virtual environment, core headers, compiler).
     """
-    check_venv()
     check_core_headers()
     check_compiler()
 

@@ -9,21 +9,36 @@
 
 #ifdef _WIN32
 
+int wvls_ensure_fiber() {
+  if (!GetCurrentFiber()) {
+    if (!ConvertThreadToFiber(NULL)) {
+      return GetLastError();
+    }
+  }
+  return 0;
+}
+
+void wvls_destructor_noop(void* Py_UNUSED(data)) {
+  /* PASS */
+}
+
 int wvls_key_create(wvls_key_t* key, wvls_destructor_t destructor) {
   if (!key) {
     return ERROR_INVALID_PARAMETER;
   }
 
-  if (destructor) {
-    *key = FlsAlloc((PFLS_CALLBACK_FUNCTION)destructor);
-    if (*key == FLS_OUT_OF_INDEXES) {
-      return GetLastError();
-    }
-  } else {
-    *key = TlsAlloc();
-    if (*key == TLS_OUT_OF_INDEXES) {
-      return GetLastError();
-    }
+  int ret_val = wvls_ensure_fiber();
+  if (ret_val) {
+    return ret_val;
+  }
+
+  if (!destructor) {
+    destructor = wvls_destructor_noop;
+  }
+
+  *key = FlsAlloc((PFLS_CALLBACK_FUNCTION)destructor);
+  if (*key == FLS_OUT_OF_INDEXES) {
+    return GetLastError();
   }
 
   return 0;
@@ -34,7 +49,12 @@ int wvls_key_delete(wvls_key_t key) {
     return ERROR_INVALID_PARAMETER;
   }
 
-  if (!FlsFree(key) && !TlsFree(key)) {
+  int ret_val = wvls_ensure_fiber();
+  if (ret_val) {
+    return ret_val;
+  }
+
+  if (!FlsFree(key)) {
     return GetLastError();
   }
 
@@ -46,23 +66,30 @@ int wvls_set_value(wvls_key_t key, void* value) {
     return ERROR_INVALID_PARAMETER;
   }
 
-  /* If TlsGetValue returns NULL, it may be because the thread existed before
+  int ret_val = wvls_ensure_fiber();
+  if (ret_val) {
+    return ret_val;
+  }
+
+  /* If FlsGetValue returns NULL, it may be because the thread existed before
      the DLL was loaded (e.g., main thread or threads created by other
      libraries). In this case, we need to allocate memory for the TLS value and
      set it. */
-  LPVOID lpvData = TlsGetValue(key);
+  LPVOID lpvData = FlsGetValue(key);
   if (lpvData == NULL && GetLastError() != ERROR_SUCCESS) {
     lpvData = LocalAlloc(LPTR, 256);
     if (lpvData == NULL) {
       return ERROR_NOT_ENOUGH_MEMORY;
     }
-    if (!TlsSetValue(key, lpvData)) {
+    if (!FlsSetValue(key, lpvData)) {
       LocalFree(lpvData);
       return GetLastError();
     }
   }
 
-  *(LPVOID*)lpvData = value;
+  if (!FlsSetValue(key, value)) {
+    return GetLastError();
+  }
 
   return 0;
 }
@@ -72,12 +99,11 @@ void* wvls_get_value(wvls_key_t key) {
     return NULL;
   }
 
-  void* value = FlsGetValue(key);
-  if (value == NULL && GetLastError() != ERROR_SUCCESS) {
-    value = TlsGetValue(key);
+  if (wvls_ensure_fiber()) {
+    return NULL;
   }
 
-  return value;
+  return FlsGetValue(key);
 }
 
 #else /* POSIX */
@@ -147,13 +173,15 @@ void wvls_destructors_invoke(void* arg) {
 }
 
 static void init_wvls_destructor_key() {
-  if (wvls_key_create(&wvls_destructors_key, wvls_destructors_invoke) != 0) {
-    fprintf(stderr, "Failed to create TLS key.\n");
+  int oops = wvls_key_create(&wvls_destructors_key, wvls_destructors_invoke);
+  if (oops) {
+    fprintf(stderr, "Failed to create TLS key: %i.\n", oops);
     abort();
   }
   /* Probably not necessary but let's be careful. */
-  if (wvls_set_value(wvls_destructors_key, NULL)) {
-    fprintf(stderr, "Failed to set TLS value.\n");
+  oops = wvls_set_value(wvls_destructors_key, NULL);
+  if (oops) {
+    fprintf(stderr, "Failed to set TLS value : %i.\n", oops);
     abort();
   }
 }
