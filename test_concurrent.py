@@ -766,7 +766,13 @@ class TestConcurrentGatheringIterator(unittest.TestCase):
         iterator._dict = BreakingDict()
 
         def worker():
-            iterator.insert(0, None)
+            try:
+                iterator.insert(0, None)
+            except RuntimeError:
+                # We want the insert to fail and set the internal flag to
+                # indicate that a failure occurred. We don't want the error to
+                # propagate further than this.
+                pass
 
         t = threading.Thread(target=worker)
         t.start()
