@@ -2,10 +2,10 @@
 
 name: Build and Test
 
-on:
-  push:
-    branches:
-      - main
+# on:
+#   push:
+#     branches:
+#       - main
 
 # This build configuration uses a matrix to build and test multiple Python versions.
 # Each version is actioned across on multiple operating systems (Ubuntu, Windows, macOS).
