@@ -33,7 +33,9 @@ runs:
           sudo apt-get update
           sudo apt-get install -y gcc make libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev libffi-dev
         elif [ "${{ runner.os }}" = "macOS" ]; then
-          brew install openssl readline sqlite3 xz tcl-tk pkg-config
+          brew install openssl readline sqlite3 xz tcl-tk
+          echo "CPPFLAGS=-I$(brew --prefix)/include" >> $GITHUB_ENV
+          echo "LDFLAGS=-L$(brew --prefix)/lib" >> $GITHUB_ENV
         elif [ "${{ runner.os }}" = "Windows" ]; then
           choco install --quiet  --no-progress openssl
         fi
