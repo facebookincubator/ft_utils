@@ -16,9 +16,14 @@ except ImportError:
         pass
 
 
-from typing import Any, Optional
+from typing import Any
 
-from ft_utils._concurrent import AtomicInt64, AtomicReference, ConcurrentDict
+from ft_utils._concurrent import (
+    AtomicInt64,
+    AtomicReference,
+    ConcurrentDeque,
+    ConcurrentDict,
+)
 
 from ft_utils.local import LocalWrapper
 

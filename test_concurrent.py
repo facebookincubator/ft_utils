@@ -733,6 +733,370 @@ class TestStdConcurrentQueue(unittest.TestCase):
             q.put(32)
 
 
+class TestConcurrentDeque(unittest.TestCase):
+    class RichComparisonFailure:
+        def rich_comparison_failure(self, other):
+            raise RuntimeError("failure")
+
+        __lt__ = rich_comparison_failure
+        __le__ = rich_comparison_failure
+        __eq__ = rich_comparison_failure
+        __ne__ = rich_comparison_failure
+        __gt__ = rich_comparison_failure
+        __ge__ = rich_comparison_failure
+
+    def test_smoke(self):
+        d = concurrent.ConcurrentDeque[int]()
+        d.append(10)
+
+        self.assertEqual(d.pop(), 10)
+
+    def test_appends(self):
+        d = concurrent.ConcurrentDeque[int]()
+        for i in range(10):
+            if i % 2 == 0:
+                d.appendleft(i)
+            else:
+                d.append(i)
+
+        for i in range(9, 0, -1):
+            if i % 2 == 0:
+                self.assertEqual(d.popleft(), i)
+            else:
+                self.assertEqual(d.pop(), i)
+
+    def test_appends_concurrent(self):
+        n_workers = 10
+        n_numbers = 100
+
+        d = concurrent.ConcurrentDeque[int]()
+        b = threading.Barrier(n_workers, timeout=1)
+
+        def worker():
+            b.wait()
+            for i in range(n_numbers):
+                time.sleep(0.001)  # attempt to get interleaved appends
+                if i % 2 == 0:
+                    d.appendleft(i)
+                else:
+                    d.append(i)
+
+        threads = [threading.Thread(target=worker) for _ in range(n_workers)]
+
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        for i in range(n_workers * n_numbers):
+            if i % 2 == 0:
+                self.assertIn(d.popleft(), list(range(0, n_numbers, 2)))
+            else:
+                self.assertIn(d.pop(), list(range(1, n_numbers, 2)))
+
+    def test_clear(self):
+        d = concurrent.ConcurrentDeque[int]([1, 2, 3, 4, 5])
+        d.clear()
+
+        self.assertEqual(len(d), 0)
+
+    def test_contains(self):
+        d = concurrent.ConcurrentDeque[int]([1, 2, 3, 4, 5])
+        self.assertTrue(1 in d)
+        self.assertFalse(0 in d)
+
+    def test_contains_failure(self):
+        d = concurrent.ConcurrentDeque([self.RichComparisonFailure()])
+        with self.assertRaises(RuntimeError):
+            self.assertFalse(0 in d)
+
+    def test_extend(self):
+        d = concurrent.ConcurrentDeque[int]()
+        d.extend([1, 2, 3])
+        d.extend([4, 5])
+
+        self.assertEqual(len(d), 5)
+        self.assertEqual(d.pop(), 5)
+
+    def test_extendleft(self):
+        d = concurrent.ConcurrentDeque[int]()
+        d.extendleft([5, 4])
+        d.extendleft([3, 2, 1])
+
+        self.assertEqual(len(d), 5)
+        self.assertEqual(d.popleft(), 1)
+
+    def test_item(self):
+        d = concurrent.ConcurrentDeque[int]([1, 2, 3, 4, 5])
+
+        self.assertEqual(d[0], 1)
+        self.assertEqual(d[2], 3)
+        self.assertEqual(d[4], 5)
+        self.assertEqual(d[-1], 5)
+
+        with self.assertRaises(IndexError):
+            d[5]
+
+    def test_iter(self):
+        d = concurrent.ConcurrentDeque[int]([1, 2, 3, 4, 5])
+        self.assertEqual(list(d), [1, 2, 3, 4, 5])
+
+    def test_remove(self):
+        d = concurrent.ConcurrentDeque[int]([1, 2, 3, 4, 5])
+        d.remove(1)
+        self.assertEqual(d.popleft(), 2)
+
+        d.remove(5)
+        self.assertEqual(d.pop(), 4)
+
+        with self.assertRaises(ValueError):
+            d.remove(1)
+
+    def test_remove_failure(self):
+        d = concurrent.ConcurrentDeque([self.RichComparisonFailure()])
+        with self.assertRaises(RuntimeError):
+            d.remove(1)
+
+    def test_rich_comparison(self):
+        d1 = concurrent.ConcurrentDeque[int]([])
+        d2 = concurrent.ConcurrentDeque[int]([])
+        self.assertEqual(d1, d2)  # [] == []
+
+        d2.append(1)
+        self.assertLess(d1, d2)  # [] < [1]
+        self.assertNotEqual(d1, d2)  # [] != [1]
+
+        d1.extend([1, 2])
+        self.assertGreater(d1, d2)  # [1, 2] > [1]
+
+        d2.append(2)
+        self.assertLessEqual(d1, d2)  # [1, 2] <= [1, 2]
+        self.assertGreaterEqual(d1, d2)  # [1, 2] >= [1, 2]
+
+    def test_rotate(self):
+        d = concurrent.ConcurrentDeque[int]([1, 2, 3, 4, 5])
+        d.rotate(1)
+        self.assertEqual(d.pop(), 4)
+
+        d = concurrent.ConcurrentDeque[int]([1, 2, 3, 4, 5])
+        d.rotate(-1)
+        self.assertEqual(d.pop(), 1)
+
+        d = concurrent.ConcurrentDeque[int]([1, 2, 3, 4, 5])
+        d.rotate(0)
+        self.assertEqual(d.pop(), 5)
+
+
+class TestConcurrentDequeGC(unittest.TestCase):
+    def setUp(self):
+        gc.collect()
+
+    def test_simple_gc_weakref(self):
+        d = concurrent.ConcurrentDeque()
+
+        d.append("value")
+        ref = weakref.ref(d)
+
+        del d
+        gc.collect()
+
+        self.assertIsNone(ref())
+
+    def test_cyclic_gc_weakref(self):
+        d1 = concurrent.ConcurrentDeque()
+        d2 = concurrent.ConcurrentDeque()
+
+        d1.append(d2)
+        d2.append(d1)
+        ref1 = weakref.ref(d1)
+        ref2 = weakref.ref(d2)
+
+        del d1
+        del d2
+        gc.collect()
+
+        self.assertIsNone(ref1())
+        self.assertIsNone(ref2())
+
+    def test_nested_cyclic_gc_weakref(self):
+        d1 = concurrent.ConcurrentDeque()
+        d2 = concurrent.ConcurrentDeque()
+        d3 = concurrent.ConcurrentDeque()
+
+        d1.append(d2)
+        d2.append(d3)
+        d3.append(d1)
+        ref1 = weakref.ref(d1)
+        ref2 = weakref.ref(d2)
+        ref3 = weakref.ref(d3)
+
+        del d1
+        del d2
+        del d3
+        gc.collect()
+
+        self.assertIsNone(ref1())
+        self.assertIsNone(ref2())
+        self.assertIsNone(ref3())
+
+    def test_self_referential_gc_weakref(self):
+        d = concurrent.ConcurrentDeque()
+        d.append(d)
+
+        ref = weakref.ref(d)
+        del d
+
+        gc.collect()
+        self.assertIsNone(ref())
+
+    def test_gc_garbage_list(self):
+        self.assertTrue(gc.garbage == [])
+
+        d = concurrent.ConcurrentDeque()
+        del d
+        gc.collect()
+        self.assertTrue(gc.garbage == [])
+
+        d = concurrent.ConcurrentDeque()
+        d.append(d)
+        del d
+        gc.collect()
+        self.assertTrue(gc.garbage == [])
+
+        d1 = concurrent.ConcurrentDeque()
+        d2 = concurrent.ConcurrentDeque()
+        d1.append(d2)
+        d2.append(d1)
+        del d1
+        del d2
+        gc.collect()
+        self.assertTrue(gc.garbage == [])
+
+        d = concurrent.ConcurrentDeque()
+        d.append([d])
+        del d
+        gc.collect()
+        self.assertTrue(gc.garbage == [])
+
+    class _TestObject:
+        pass
+
+    def test_contains(self):
+        d = concurrent.ConcurrentDeque()
+        o = self._TestObject()
+        ref = weakref.ref(o)
+
+        d.append(o)
+        self.assertTrue(o in d)
+        del o
+
+        d.pop()
+        gc.collect()
+
+        self.assertIsNone(ref())
+
+    def test_contains_cycle(self):
+        d1 = concurrent.ConcurrentDeque()
+        d2 = concurrent.ConcurrentDeque()
+        o = self._TestObject()
+
+        d1.append(o)
+        d1.append(d2)
+
+        d2.append(o)
+        d2.append(d1)
+
+        ref1 = weakref.ref(d1)
+        ref2 = weakref.ref(d2)
+
+        self.assertTrue(o in d1)
+        self.assertTrue(d2 in d1)
+
+        self.assertTrue(o in d2)
+        self.assertTrue(d1 in d2)
+
+        del d1
+        del d2
+        gc.collect()
+
+        self.assertIsNone(ref1())
+        self.assertIsNone(ref2())
+
+    def test_pop(self):
+        d = concurrent.ConcurrentDeque([self._TestObject()])
+        ref = weakref.ref(d[0])
+
+        d.pop()
+        gc.collect()
+
+        self.assertIsNone(ref())
+
+    def test_popleft(self):
+        d = concurrent.ConcurrentDeque([self._TestObject()])
+        ref = weakref.ref(d[0])
+
+        d.popleft()
+        gc.collect()
+
+        self.assertIsNone(ref())
+
+    def test_remove_head(self):
+        d = concurrent.ConcurrentDeque([self._TestObject(), 1, 2, 3])
+        ref = weakref.ref(d[0])
+
+        d.remove(d[0])
+        gc.collect()
+
+        self.assertIsNone(ref())
+
+    def test_remove_tail(self):
+        d = concurrent.ConcurrentDeque([1, 2, 3, self._TestObject()])
+        ref = weakref.ref(d[-1])
+
+        d.remove(d[-1])
+        gc.collect()
+
+        self.assertIsNone(ref())
+
+    def test_remove_inner(self):
+        d = concurrent.ConcurrentDeque([1, 2, self._TestObject(), 3])
+        ref = weakref.ref(d[2])
+
+        d.remove(d[2])
+        gc.collect()
+
+        self.assertIsNone(ref())
+
+    def test_rotate(self):
+        d = concurrent.ConcurrentDeque([1, 2, 3, self._TestObject()])
+        ref = weakref.ref(d[3])
+
+        d.rotate(1)
+        d.popleft()
+        gc.collect()
+
+        self.assertIsNone(ref())
+
+    def test_rotate_cycle(self):
+        d1 = concurrent.ConcurrentDeque([1, 2, 3])
+        d2 = concurrent.ConcurrentDeque([4, 5, 6])
+
+        d1.append(d2)
+        d2.append(d1)
+        ref1 = weakref.ref(d1)
+        ref2 = weakref.ref(d2)
+
+        d1.rotate(1)
+        d2.rotate(1)
+
+        del d1
+        del d2
+        gc.collect()
+
+        self.assertIsNone(ref1())
+        self.assertIsNone(ref2())
+
+
 class TestConcurrentGatheringIterator(unittest.TestCase):
     def test_smoke(self):
         iterator = concurrent.ConcurrentGatheringIterator()
