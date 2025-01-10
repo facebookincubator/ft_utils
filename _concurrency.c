@@ -632,15 +632,15 @@ typedef struct {
  * head and tail nodes.
  */
 typedef struct {
-  PyObject_HEAD;
-  /* The list field in this struct is a tagged pointer. If the least-significant
-   * bit is set, then list is considered "locked". This happens when the list
-   * has just been replaced and one of the operations needs to fix internal
-   * links within the linked-list. Because this is a tagged pointer, it is not
-   * safe for reading without considering the lock state. Note that we can do
-   * this tagging because of the alignment of the list field.
+  /* The list field in this struct is a tagged pointer. If the
+   * least-significant bit is set, then list is considered "locked". This
+   * happens when the list has just been replaced and one of the operations
+   * needs to fix internal links within the linked-list. Because this is a
+   * tagged pointer, it is not safe for reading without considering the lock
+   * state. Note that we can do this tagging because of the alignment of the
+   * list field.
    */
-  ConcurrentDequeList* list;
+  PyObject_HEAD ConcurrentDequeList* list;
   PyObject* weakreflist;
 } ConcurrentDequeObject;
 
