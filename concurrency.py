@@ -18,7 +18,7 @@ except ImportError:
 
 from typing import Any
 
-from ft_utils._concurrent import (
+from ft_utils._concurrency import (
     AtomicInt64,
     AtomicReference,
     ConcurrentDeque,

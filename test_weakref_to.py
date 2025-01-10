@@ -6,7 +6,12 @@ import gc
 import unittest
 import weakref
 
-from ft_utils.concurrent import AtomicFlag, AtomicInt64, AtomicReference, ConcurrentDict
+from ft_utils.concurrency import (
+    AtomicFlag,
+    AtomicInt64,
+    AtomicReference,
+    ConcurrentDict,
+)
 from ft_utils.local import BatchExecutor, LocalWrapper
 
 

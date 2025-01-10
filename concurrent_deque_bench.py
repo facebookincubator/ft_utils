@@ -6,7 +6,7 @@ from collections import deque
 from typing import Deque
 
 from ft_utils.benchmark_utils import BenchmarkProvider, execute_benchmarks
-from ft_utils.concurrent import ConcurrentDeque
+from ft_utils.concurrency import ConcurrentDeque
 from ft_utils.local import LocalWrapper
 
 

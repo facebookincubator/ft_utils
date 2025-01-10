@@ -9,7 +9,7 @@ import time
 import unittest
 from collections.abc import Callable
 
-from ft_utils.concurrent import AtomicFlag, AtomicReference
+from ft_utils.concurrency import AtomicFlag, AtomicReference
 
 
 def run_interrupt_handling(

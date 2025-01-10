@@ -8,7 +8,7 @@ import uuid
 from typing import Optional
 
 from ft_utils.benchmark_utils import BenchmarkProvider, execute_benchmarks, ft_randint
-from ft_utils.concurrent import ConcurrentDict
+from ft_utils.concurrency import ConcurrentDict
 from ft_utils.local import LocalWrapper
 
 

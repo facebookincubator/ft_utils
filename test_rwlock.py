@@ -6,7 +6,7 @@ import threading
 import time
 import unittest
 
-from ft_utils.concurrent import AtomicFlag, AtomicInt64
+from ft_utils.concurrency import AtomicFlag, AtomicInt64
 from ft_utils.lock_test_utils import run_interrupt_handling
 from ft_utils.synchronization import RWLock, RWReadContext, RWWriteContext
 

@@ -6,7 +6,7 @@ import os
 import queue
 
 from ft_utils.benchmark_utils import BenchmarkProvider, execute_benchmarks
-from ft_utils.concurrent import ConcurrentQueue, StdConcurrentQueue
+from ft_utils.concurrency import ConcurrentQueue, StdConcurrentQueue
 from ft_utils.local import LocalWrapper
 
 ConcurrentQueue.put = ConcurrentQueue.push  # type: ignore

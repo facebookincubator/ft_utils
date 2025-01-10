@@ -6,7 +6,7 @@
 import threading
 from collections.abc import Callable
 
-from ft_utils.concurrent import AtomicInt64
+from ft_utils.concurrency import AtomicInt64
 from ft_utils.synchronization import IntervalLock
 
 power: int = 10

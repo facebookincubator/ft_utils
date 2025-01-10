@@ -4,9 +4,9 @@
 
 The ft_utils API is organized into several modules, each providing a specific set of functionalities.
 
-### concurrent
+### concurrency
 
-The [concurrent module](concurrent_api.md) provides a set of foundational structures to implement scalable and efficient Free Threaded code. Using these structures can help avoid bottlenecks and enhance thread-consistency in FTPython code.
+The [concurrency module](concurrency_api.md) provides a set of foundational structures to implement scalable and efficient Free Threaded code. Using these structures can help avoid bottlenecks and enhance thread-consistency in FTPython code.
 
 ### synchronization
 

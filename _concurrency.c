@@ -174,7 +174,7 @@ static PyMethodDef ConcurrentDict_methods[] = {
     {NULL, NULL, 0, NULL}};
 
 static PyTypeObject ConcurrentDictType = {
-    PyVarObject_HEAD_INIT(NULL, 0).tp_name = "_concurrent.ConcurrentDict",
+    PyVarObject_HEAD_INIT(NULL, 0).tp_name = "_concurrency.ConcurrentDict",
     .tp_doc = "Concurrent Dictionary",
     .tp_basicsize = sizeof(ConcurrentDictObject),
     .tp_itemsize = 0,
@@ -467,7 +467,7 @@ static PyNumberMethods atomicint64_as_number = {
 };
 
 static PyTypeObject AtomicInt64Type = {
-    PyVarObject_HEAD_INIT(NULL, 0).tp_name = "_concurrent.AtomicInt64",
+    PyVarObject_HEAD_INIT(NULL, 0).tp_name = "_concurrency.AtomicInt64",
     .tp_basicsize = sizeof(AtomicInt64Object),
     .tp_itemsize = 0,
     .tp_dealloc = (destructor)atomicint64_dealloc,
@@ -589,7 +589,7 @@ static PyMethodDef AtomicReference_methods[] = {
     {NULL}};
 
 static PyTypeObject AtomicReferenceType = {
-    PyVarObject_HEAD_INIT(NULL, 0).tp_name = "_concurrent.AtomicReference",
+    PyVarObject_HEAD_INIT(NULL, 0).tp_name = "_concurrency.AtomicReference",
     .tp_basicsize = sizeof(AtomicReferenceObject),
     .tp_dealloc = (destructor)atomicreference_dealloc,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
@@ -1683,7 +1683,7 @@ static PyObject* ConcurrentDequeIterator_next(
 
 static PyTypeObject ConcurrentDequeIteratorType = {
     PyVarObject_HEAD_INIT(NULL, 0).tp_name =
-        "_concurrent.ConcurrentDequeIterator",
+        "_concurrency.ConcurrentDequeIterator",
     .tp_doc = "ConcurrentDequeIterator",
     .tp_basicsize = sizeof(ConcurrentDequeIteratorObject),
     .tp_itemsize = 0,
@@ -1749,7 +1749,7 @@ static PySequenceMethods ConcurrentDequeType_as_sequence = {
 };
 
 static PyTypeObject ConcurrentDequeType = {
-    PyVarObject_HEAD_INIT(NULL, 0).tp_name = "_concurrent.ConcurrentDeque",
+    PyVarObject_HEAD_INIT(NULL, 0).tp_name = "_concurrency.ConcurrentDeque",
     .tp_doc = (void*)ConcurrentDeque_init__doc__,
     .tp_basicsize = sizeof(ConcurrentDequeObject),
     .tp_itemsize = 0,
@@ -1915,9 +1915,9 @@ static struct PyModuleDef_Slot module_slots[] = {
     {0, NULL} /* sentinel */
 };
 
-static PyModuleDef concurrent_module = {
+static PyModuleDef concurrency_module = {
     PyModuleDef_HEAD_INIT,
-    "_concurrent",
+    "_concurrency",
     "Concurrently scalable data structures and patterns.",
     0,
     NULL,
@@ -1926,6 +1926,6 @@ static PyModuleDef concurrent_module = {
     NULL,
     NULL};
 
-PyMODINIT_FUNC PyInit__concurrent(void) {
-  return PyModuleDef_Init(&concurrent_module);
+PyMODINIT_FUNC PyInit__concurrency(void) {
+  return PyModuleDef_Init(&concurrency_module);
 }
