@@ -3,7 +3,6 @@
 # pyre-unsafe
 
 # We deliberately do not import weave because we want to ensure the native code does this.
-import os
 import sys
 import threading
 import unittest
@@ -23,7 +22,6 @@ from ft_utils._test_weave import (  # @manual
 
 
 @unittest.skipIf(sys.version_info < (3, 13), "Requires Python 3.13 or later")
-@unittest.skipIf(os.name == "nt", "Windows currently broken for this test")
 class TestTLSManagement(unittest.TestCase):
     def setUp(self):
         ft_utils.ENABLE_EXPERIMENTAL = True

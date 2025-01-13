@@ -748,34 +748,28 @@ static void ConcurrentDequeList_dealloc(ConcurrentDequeList* list) {
  * spinning when waiting for a lock.
  */
 #ifndef WV_PAUSE
-#if defined(_MSC_VER) // Microsoft compilers
-#if defined(_M_X64) || defined(_M_IX86) // Intel/AMD
-#include <immintrin.h>
-#define WV_PAUSE() _mm_pause()
-#elif defined(_M_ARM) || defined(_M_ARM64) // ARM
-#define WV_PAUSE() __yield()
+#if defined(_WIN32)
+#include <windows.h>
+#define WV_PAUSE() YieldProcessor() /* Windows */
+#elif defined(__GNUC__) || defined(__clang__)
+#if defined(__x86_64__) || defined(__i386__)
+#define WV_PAUSE() __builtin_ia32_pause() /* Intel/AMD */
+#elif defined(__aarch64__) || defined(__arm__)
+#define WV_PAUSE() asm volatile("yield" ::: "memory") /* ARM */
 #else
-#define WV_PAUSE() // Fallback: no-op
+#define WV_PAUSE() /* Unknown */
 #endif
-#elif defined(__GNUC__) || defined(__clang__) // GCC/Clang
-#if defined(__x86_64__) || defined(__i386__) // Intel/AMD
-
-#define WV_PAUSE() __builtin_ia32_pause()
-#elif defined(__aarch64__) || defined(__arm__) // ARM
-#define WV_PAUSE() asm volatile("yield" ::: "memory")
 #else
-#define WV_PAUSE() // Fallback: no-op
+#define WV_PAUSE() /* Unknown */
 #endif
-#else // Unknown compiler
-#define WV_PAUSE() // Fallback: no-op
 #endif
-#endif // WV_PAUSE
 
 /* Pause for the given number of iterations, using the WV_PAUSE macro.
  */
 static inline void ConcurrentDeque_backoff_pause(unsigned int backoff) {
-  for (unsigned int pause = 0; pause < backoff; pause++)
+  for (unsigned int pause = 0; pause < backoff; pause++) {
     WV_PAUSE();
+  }
 }
 
 /* An infinite for-loop that performs exponential backoff.
