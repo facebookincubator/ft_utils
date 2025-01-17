@@ -256,11 +256,12 @@ def invoke_main() -> None:
         packages=["ft_utils", "ft_utils.native", "ft_utils.tests"],
         ext_modules=c_extensions,
         classifiers=[
-            "Development Status :: 1 - alpha/Unstable",
+            "Development Status :: 4 - Beta",
             "Intended Audience :: Developers",
             "License :: OSI Approved :: MIT License",
             "Programming Language :: Python :: 3.12",
             "Programming Language :: Python :: 3.13",
+            "Programming Language :: Python :: 3.14",
         ],
     )
 
