@@ -29,11 +29,19 @@ See to [documentation](docs/index.md).
 
 ## Build And CI
 
-### Source Only
+ft_utils is built and tested against the following configurations:
 
-At the time of writing ft_utils is a source only distribution. You will need to build the wheel yourself.
+|               | manylinux: glibc 2.17+ x86-64 | manylinux: glibc 2.17+ i686 | musllinux: musl 1.2+ x86-64 | musllinux: musl 1.2+ i686 | Windows x86-64 | macOS 11.0+ ARM64 | manylinux: glibc 2.34+ x86-64 |
+| ------------- | ----------------------------- | --------------------------- | --------------------------- | ------------------------- | -------------- | ----------------- | ----------------------------- |
+| CPython 3.12  | ✅                            | ✅                          | ✅                          | ✅                        |                |                   |                               |
+| CPython 3.13  | ✅                            | ✅                          | ✅                          | ✅                        | ✅             | ✅                |                               |
+| CPython 3.13t | ✅                            | ✅                          | ✅                          | ✅                        | ✅             | ✅                |                               |
+| CPython 3.14  |                               |                             |                             |                           |                |                   | ✅                            |
+| CPython 3.14t |                               |                             |                             |                           |                |                   | ✅                            |
 
-### Build The Wheel
+These wheels are uploaded to and available on [PyPI](https://pypi.org/project/ft-utils/).
+
+### Build from source
 
 You will need a source code version of CPython. To run for Free Threaded Python, at the time of writing, this means
 you will require CPython 3.13 and compile as 3.13t. This code will also compile under 3.12 but then you only get the
@@ -66,8 +74,6 @@ Or:
 python -m pip install --force-reinstall build\dist\ft_utils-0.1.0-cp314-cp314-win_amd64.whl
 ```
 
-### CI
+### Testing from source
 
-The code in ft_utils is built and tested interally within Meta. At the time of writing there is no external CI.
-
-However, once installed you can test the code via `python -m ft_utils.tests.test_run_all`. This will not work if your current working directory is the ft_utils source director (due to name clash). This will run all the tests and benchmarks which are known good and report any failures.
+Once installed you can test the code via `python -m ft_utils.tests.test_run_all`. This will run all the tests and benchmarks which are known to be good and report any failures.
