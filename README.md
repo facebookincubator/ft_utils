@@ -33,7 +33,7 @@ ft_utils is built and tested against the following configurations:
 
 |               | manylinux: glibc 2.17+ x86-64 | manylinux: glibc 2.17+ i686 | musllinux: musl 1.2+ x86-64 | musllinux: musl 1.2+ i686 | Windows x86-64 | macOS 11.0+ ARM64 | manylinux: glibc 2.34+ x86-64 |
 | ------------- | ----------------------------- | --------------------------- | --------------------------- | ------------------------- | -------------- | ----------------- | ----------------------------- |
-| CPython 3.12  | ✅                            | ✅                          | ✅                          | ✅                        |                |                   |                               |
+| CPython 3.12  | ✅                            | ✅                          | ✅                          | ✅                        | ✅             | ✅                |                               |
 | CPython 3.13  | ✅                            | ✅                          | ✅                          | ✅                        | ✅             | ✅                |                               |
 | CPython 3.13t | ✅                            | ✅                          | ✅                          | ✅                        | ✅             | ✅                |                               |
 | CPython 3.14  |                               |                             |                             |                           |                |                   | ✅                            |
