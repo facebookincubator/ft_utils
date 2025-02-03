@@ -8,6 +8,7 @@
 */
 
 #ifdef _WIN32
+#include "ft_utils.h"
 
 /* When dynamic TLS keys are created through wvls_key_create, we keep track of
  * them in this linked list. On thread detach, we optionally call the callback
@@ -24,6 +25,7 @@ typedef struct wvls_dynamic_key {
  * keys. On process detach, it will be walked to free all of the keys
  */
 static wvls_dynamic_key_t* wvls_dynamic_keys = NULL;
+static MUTEX_TYPE wvls_dynamic_keys_mutex;
 
 /* The DllMain entrypoint allows us to hook into the dll process to get notified
  * when threads or processes are detached. Note that this works because the
@@ -38,12 +40,6 @@ static wvls_dynamic_key_t* wvls_dynamic_keys = NULL;
  */
 __declspec(dllexport) BOOL WINAPI
 DllMain(HINSTANCE hinst_dll, DWORD fdw_reason, LPVOID lp_reserved) {
-  /* If we have not been initialized yet, we do not need to worry about
-   * notifications coming from DllMain. */
-  if (!wvls_dynamic_keys) {
-    return TRUE;
-  }
-
   switch (fdw_reason) {
     case DLL_THREAD_DETACH: {
       /* On thread detach, we want to visit each TLS key and call its callback
@@ -51,6 +47,7 @@ DllMain(HINSTANCE hinst_dll, DWORD fdw_reason, LPVOID lp_reserved) {
        * want to set the value to NULL. Note that we do _not_ want to free the
        * key here, since this needs to run on every thread being detached.
        */
+      MUTEX_LOCK(wvls_dynamic_keys_mutex);
       wvls_dynamic_key_t* dynamic_key = wvls_dynamic_keys;
 
       while (dynamic_key) {
@@ -65,12 +62,14 @@ DllMain(HINSTANCE hinst_dll, DWORD fdw_reason, LPVOID lp_reserved) {
         dynamic_key = dynamic_key->next;
       }
 
+      MUTEX_UNLOCK(wvls_dynamic_keys_mutex);
       break;
     }
     case DLL_PROCESS_DETACH: {
       /* On process detach, we want to visit each TLS key and return it, then
        * we want to clear our own bookkeeping.
        */
+      MUTEX_LOCK(wvls_dynamic_keys_mutex);
       wvls_dynamic_key_t* dynamic_key = wvls_dynamic_keys;
 
       while (dynamic_key) {
@@ -81,6 +80,8 @@ DllMain(HINSTANCE hinst_dll, DWORD fdw_reason, LPVOID lp_reserved) {
       }
 
       wvls_dynamic_keys = NULL;
+      MUTEX_UNLOCK(wvls_dynamic_keys_mutex);
+      MUTEX_DESTROY(wvls_dynamic_keys_mutex);
       break;
     }
   }
@@ -88,7 +89,7 @@ DllMain(HINSTANCE hinst_dll, DWORD fdw_reason, LPVOID lp_reserved) {
   return TRUE;
 }
 
-/* Create a weave key that will call the given destructor on thread exit. */
+/* Create a weave key that will call the given callback on thread exit. */
 int wvls_key_create(wvls_key_t* key, wvls_destructor_t destructor) {
   if (!key) {
     return ERROR_INVALID_PARAMETER;
@@ -108,10 +109,13 @@ int wvls_key_create(wvls_key_t* key, wvls_destructor_t destructor) {
     return ENOMEM;
   }
 
-  dynamic_key->next = wvls_dynamic_keys;
   dynamic_key->key = *key;
   dynamic_key->destructor = destructor;
+
+  MUTEX_LOCK(wvls_dynamic_keys_mutex);
+  dynamic_key->next = wvls_dynamic_keys;
   wvls_dynamic_keys = dynamic_key;
+  MUTEX_UNLOCK(wvls_dynamic_keys_mutex);
 
   return 0;
 }
@@ -119,7 +123,10 @@ int wvls_key_create(wvls_key_t* key, wvls_destructor_t destructor) {
 /* Delete a weave key. Note that this will not call the callback associated with
  * the key if one was given on creation. */
 int wvls_key_delete(wvls_key_t key) {
+  MUTEX_LOCK(wvls_dynamic_keys_mutex);
+
   if (!key || !wvls_dynamic_keys) {
+    MUTEX_UNLOCK(wvls_dynamic_keys_mutex);
     return ERROR_INVALID_PARAMETER;
   }
 
@@ -134,6 +141,7 @@ int wvls_key_delete(wvls_key_t key) {
 
   /* If we did not find the key, return an error. */
   if (!current) {
+    MUTEX_UNLOCK(wvls_dynamic_keys_mutex);
     return ERROR_INVALID_PARAMETER;
   }
 
@@ -146,6 +154,8 @@ int wvls_key_delete(wvls_key_t key) {
 
   /* Free the key. */
   free(current);
+  MUTEX_UNLOCK(wvls_dynamic_keys_mutex);
+
   if (!TlsFree(key)) {
     return GetLastError();
   }
@@ -351,6 +361,10 @@ static PyObject* wvlspy_unregister_destructor(PyObject* self, PyObject* args) {
 }
 
 static int exec_weave_module(PyObject* module) {
+#ifdef _WIN32
+  MUTEX_INIT(wvls_dynamic_keys_mutex);
+#endif
+
   init_wvls_destructor_key();
   return 0; /* Return 0 on success */
 }
