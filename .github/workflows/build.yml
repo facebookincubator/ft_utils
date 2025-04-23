@@ -8,6 +8,7 @@ on:
       - main
     tags:
       - 'v*'
+  workflow_dispatch:
 
 # This build configuration uses a matrix to build and test multiple Python versions.
 # Each version is actioned across on multiple operating systems (Ubuntu, Windows, macOS).
