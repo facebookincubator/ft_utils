@@ -1,3 +1,4 @@
+![Image](https://github.com/user-attachments/assets/f4ef78b9-8cc0-4264-971f-d6ac76884f3a)
 # Understanding the Global Interpreter Lock (GIL) and its Impact on Multithreaded Python Programs
 
 ## GIL vs Torn Reads

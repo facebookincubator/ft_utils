@@ -1,3 +1,4 @@
+![Image](https://github.com/user-attachments/assets/f4ef78b9-8cc0-4264-971f-d6ac76884f3a)
 # Free Threaded Python Documentation
 
 Welcome to the documentation for Free Threaded Python and the ft_utils library. This documentation provides an introduction to the concepts and best practices of concurrent programming in Free Threaded Python, as well as a comprehensive guide to the ft_utils API.

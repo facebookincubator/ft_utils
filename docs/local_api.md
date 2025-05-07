@@ -1,5 +1,4 @@
-Here is the Python documentation for the `local` module:
-
+![Image](https://github.com/user-attachments/assets/f4ef78b9-8cc0-4264-971f-d6ac76884f3a)
 # local Module Documentation
 
 ## Classes

@@ -1,5 +1,4 @@
-Here's the enhanced documentation:
-
+![Image](https://github.com/user-attachments/assets/f4ef78b9-8cc0-4264-971f-d6ac76884f3a)
 # synchronization Module Documentation
 
 ## Classes
