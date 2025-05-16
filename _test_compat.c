@@ -303,12 +303,46 @@ static PyObject* test_atomic_fence_acquire(PyObject* self, PyObject* args) {
    METH_NOARGS,                                                \
    "Test _Py_atomic_" #name #suffix},
 
+static PyObject* test_PyDict_GetItemRef(PyObject* self, PyObject* args) {
+  PyObject* dict;
+  PyObject* key;
+  PyObject* result = NULL;
+
+  // Parse the input arguments (a dictionary and a key)
+  if (!PyArg_ParseTuple(args, "OO", &dict, &key)) {
+    return NULL;
+  }
+
+  // Check if the input is a dictionary
+  if (!PyDict_Check(dict)) {
+    PyErr_SetString(PyExc_TypeError, "The first argument must be a dictionary");
+    return NULL;
+  }
+
+  // Test PyDict_GetItemRef
+  int status = PyDict_GetItemRef(dict, key, &result);
+  if (status == -1) {
+    // An error occurred, return NULL
+    return NULL;
+  } else if (status == 0) {
+    // Key is missing, return None
+    Py_RETURN_NONE;
+  } else {
+    // Key is present, return the value
+    return result;
+  }
+}
+
 static PyMethodDef test_compat_methods[] = {
     ATOMIC_OPS(DEFINE_ATOMIC_METHOD_ENTRY){
         "test_atomic_fence_acquire",
         test_atomic_fence_acquire,
         METH_NOARGS,
         "Test _Py_atomic_fence_acquire"},
+    {"test_PyDict_GetItemRef",
+     test_PyDict_GetItemRef,
+     METH_VARARGS,
+     "Test PyDict_GetItemRef"},
     {NULL, NULL, 0, NULL} /* sentinel */
 };
 

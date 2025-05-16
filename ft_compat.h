@@ -8,7 +8,24 @@
 #define _PY_NOGIL_MODULE_SLOT {Py_mod_gil, Py_MOD_GIL_NOT_USED},
 #else
 #define _PY_NOGIL_MODULE_SLOT
-#endif
+
+// NOLINTNEXTLINE
+static inline int
+PyDict_GetItemRef(PyObject* p, PyObject* key, PyObject** result) {
+  PyObject* value = PyDict_GetItem(p, key);
+  if (PyErr_Occurred()) {
+    *result = NULL;
+    return -1;
+  }
+
+  if (value == NULL) {
+    *result = NULL;
+    return 0;
+  }
+  *result = Py_NewRef(value);
+  return 1;
+}
+#endif /* PY_VERSION_HEX */
 
 #ifndef Py_ATOMIC_H
 #define Py_BEGIN_CRITICAL_SECTION(self) {

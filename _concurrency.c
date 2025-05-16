@@ -76,13 +76,15 @@ static PyObject* ConcurrentDict_getitem(
     index = -index;
   }
 
-  PyObject* value = PyDict_GetItem(self->buckets[index], key);
-  if (!value) {
+  PyObject* value = NULL;
+  int result = PyDict_GetItemRef(self->buckets[index], key, &value);
+  if (result < 0) {
+    return NULL;
+  } else if (result == 0) {
     PyErr_SetObject(PyExc_KeyError, key);
     return NULL;
   }
 
-  Py_INCREF(value);
   return value;
 }
 
