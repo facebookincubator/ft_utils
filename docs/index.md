@@ -7,7 +7,7 @@ Welcome to the documentation for Free Threaded Python and the ft_utils library. 
 
 * [Introduction to Free Threaded Python and ft_utils](introduction.md) - An overview of Free Threaded Python and the ft_utils library, including their purpose and benefits.
 
-## Threading Topics Python
+## Threading Topics In Python
 
 * [Solving Atomicity/Consistency Issues in Free Threaded Python](atomicity_in_Python.md) - A discussion of atomicity and consistency issues in Free Threaded Python, including solutions and best practices.
 * [Fine Grained Synchronization In Free Threaded Python](fine_grained_synchronization.md) - A deep dive into how free threading unlocks fine grained synchronizatrion is parallel, scalable Python systems.)
