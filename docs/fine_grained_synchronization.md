@@ -168,67 +168,115 @@ Thread safety refers to the ability of a program or a piece of code to behave co
 
 The GIL impacts the execution of threads in Python by allowing only one thread to execute Python bytecodes at a time. This means that for CPU-bound threads (those that spend most of their time performing computations), the GIL can significantly limit the benefits of multithreading because it effectively serializes the execution of these threads. However, for I/O-bound threads (those that spend most of their time waiting on I/O operations like reading from a file or network), the GIL is released during the I/O operation, allowing other threads to run.
 
-Despite its role in simplifying certain aspects of Python's threading implementation, the GIL does not make Python code thread-safe. The GIL is released during certain operations like I/O, and even when it is held, operations that appear atomic can still be interrupted. For example, incrementing a counter (`x += 1`) is not atomic; it involves reading the current value, incrementing it, and writing it back. If multiple threads are doing this concurrently, the GIL might be released between these steps, or the thread might be interrupted, leading to a race condition.
+Despite its role in simplifying certain aspects of Python's threading implementation, the GIL does not make Python code thread-safe. The GIL is released during certain operations like I/O, and even when it is held, operations that appear atomic can still be interrupted. For example, incrementing a counter (`x += 1`) is not atomic; it involves reading the current value, incrementing it, and writing it back; that might then also cause code to run due to properties and all this might change as code evolves. If multiple threads are doing this concurrently, the GIL might be released between these steps, or the thread might be interrupted, leading to a race condition.
 
 Here's an example that demonstrates how the GIL does not prevent race conditions:
 
 ```python
 import threading
 
-def increment_counter(counter, num_times):
+class Counter:
+    """Contains a reference to a counted value"""
+    def __init__(self) -> None:
+        self._counted = 0
+
+    @property
+    def counted(self) -> int:
+        return self._counted
+
+    @counted.setter
+    def counted(self, value: int) -> None:
+        self._counted = value
+
+def increment_counter(counter: Counter, num_times: int, barrier: threading.Barrier) -> None:
+    """Increments the counter 'num_times' times after waiting on the barrier."""
+    barrier.wait()
     for _ in range(num_times):
-        counter[0] += 1
+        counter.counted += 1
 
-def main():
+def main() -> None:
+    """Runs multiple threads to increment a counter and checks for correctness."""
+
     num_threads = 10
-    num_increments = 10000
-    counter = [0]
+    num_increments = 50000
+    iterations = 0
+    while True:
+        counter = Counter()
+        barrier = threading.Barrier(num_threads)
 
-    threads = []
-    for _ in range(num_threads):
-        thread = threading.Thread(target=increment_counter, args=(counter, num_increments))
-        threads.append(thread)
-        thread.start()
+        threads = []
+        for _ in range(num_threads):
+            thread = threading.Thread(target=increment_counter, args=(counter, num_increments, barrier))
+            threads.append(thread)
+            thread.start()
 
-    for thread in threads:
-        thread.join()
+        for thread in threads:
+            thread.join()
 
-    print(f"Expected: {num_threads * num_increments}")
-    print(f"Actual: {counter[0]}")
+        expected = num_threads * num_increments
+        print(f"{iterations}-> Expected: {expected} Actual: {counter.counted}", flush=True)
+        if counter.counted != expected:
+            return
+        iterations += 1
 
 if __name__ == "__main__":
     main()
 ```
 
-Running this code, you'll likely find that the actual count is less than the expected count due to the race condition in incrementing the counter.
+Running this code, you'll likely find that the actual count is less than the expected count due to the race condition in incrementing the counter. Different values for `num_increments` may or may not trigger this behaviour. Similarly, running the code on different machines may impact results. So, code might work as though it is thread safe with the GIL but in relality there is no guarantee; code which works today might suddenly break tomorrow.
 
 To achieve thread safety in Python, developers must use synchronization primitives like locks (`threading.Lock`), queues (`queue.Queue`), or other concurrency control mechanisms. For example, using a lock to protect the counter increment operation:
 
 ```python
 import threading
 
-def increment_counter(counter, lock, num_times):
+class Counter:
+    """Contains a reference to a counted value"""
+    def __init__(self) -> None:
+        self._counted = 0
+
+    @property
+    def counted(self) -> int:
+        return self._counted
+
+    @counted.setter
+    def counted(self, value: int) -> None:
+        self._counted = value
+
+def increment_counter(counter: Counter, num_times: int, barrier: threading.Barrier, lock: threading.Lock) -> None:
+    """Increments the counter 'num_times' times after waiting on the barrier."""
+    barrier.wait()
     for _ in range(num_times):
+        # Putting the lock around the entire loop is more efficient.
+        # Putting it here is a clearer demonstration of the concept.
         with lock:
-            counter[0] += 1
+            counter.counted += 1
 
-def main():
+def main() -> None:
+    """Runs multiple threads to increment a counter and checks for correctness."""
+
     num_threads = 10
-    num_increments = 10000
-    counter = [0]
+    num_increments = 50000
+    iterations = 0
     lock = threading.Lock()
+    while True:
+        counter = Counter()
+        barrier = threading.Barrier(num_threads)
 
-    threads = []
-    for _ in range(num_threads):
-        thread = threading.Thread(target=increment_counter, args=(counter, lock, num_increments))
-        threads.append(thread)
-        thread.start()
+        threads = []
+        for _ in range(num_threads):
+            thread = threading.Thread(target=increment_counter, args=(counter, num_increments, barrier, lock))
+            threads.append(thread)
+            thread.start()
 
-    for thread in threads:
-        thread.join()
+        for thread in threads:
+            thread.join()
 
-    print(f"Expected: {num_threads * num_increments}")
-    print(f"Actual: {counter[0]}")
+        expected = num_threads * num_increments
+        print(f"{iterations}-> Expected: {expected} Actual: {counter.counted}", flush=True)
+        if counter.counted != expected:
+            return
+        iterations += 1
 
 if __name__ == "__main__":
     main()
