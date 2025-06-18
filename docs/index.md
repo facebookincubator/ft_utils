@@ -15,7 +15,7 @@ Welcome to the documentation for Free Threaded Python and the ft_utils library. 
 ## ft_utils API Documentation
 
 * [ft_utils API Documentation](ft_utils_api.md) - An overview of the ft_utils API, including its modules and classes.
-* [concurrent Module Documentation](concurrent_api.md) - Documentation for the concurrent module, which provides foundational structures for scalable and efficient Free Threaded code.
+* [concurrency Module Documentation](concurrency_api.md) - Documentation for the concurrent module, which provides foundational structures for scalable and efficient Free Threaded code.
 * [local Module Documentation](local_api.md) - Documentation for the local module, which provides helper classes for moving processing from cross-thread to thread-local.
 * [synchronization Module Documentation](synchronization_api.md) - Documentation for the synchronization module, which provides specialized lock types for Free Threaded programming.
 * [weave Module Documentation](weave_api.md) - Documentation for the weave module, which provides advanced thread related functionality.
