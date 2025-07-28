@@ -331,12 +331,14 @@ static PyObject* atomicint64_abs(AtomicInt64Object* self) {
 
 static PyObject* atomicint64_format(AtomicInt64Object* self, PyObject* args) {
   PyObject* int_obj = atomicint64_int(self);
-  if (int_obj == NULL)
+  if (int_obj == NULL) {
     return NULL;
+  }
 
   PyObject* format_spec;
-  if (!PyArg_ParseTuple(args, "O", &format_spec))
+  if (!PyArg_ParseTuple(args, "O", &format_spec)) {
     return NULL;
+  }
   Py_INCREF(format_spec);
 
   PyObject* result = PyObject_Format(int_obj, format_spec);
@@ -349,16 +351,18 @@ static PyObject* atomicint64_format(AtomicInt64Object* self, PyObject* args) {
 static PyObject*
 atomicint64_richcompare(AtomicInt64Object* self, PyObject* other, int op) {
   PyObject* int_obj = atomicint64_int(self);
-  if (int_obj == NULL)
+  if (int_obj == NULL) {
     return NULL;
+  }
 
   int result = PyObject_RichCompareBool(int_obj, other, op);
   Py_DECREF(int_obj);
 
-  if (result == -1)
+  if (result == -1) {
     return NULL;
-  else
+  } else {
     return PyBool_FromLong(result);
+  }
 }
 
 static PyObject* atomicint64_ior(AtomicInt64Object* self, PyObject* other) {

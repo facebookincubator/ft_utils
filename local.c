@@ -510,8 +510,9 @@ static PyObject* LocalWrapper_getattro(
     LocalWrapperObject* self,
     PyObject* attr_name) {
   PyObject* result = PyObject_GenericGetAttr((PyObject*)self, attr_name);
-  if (result)
+  if (result) {
     return result;
+  }
   PyErr_Clear();
   return PyObject_GenericGetAttr(self->wrapped, attr_name);
 }
@@ -581,8 +582,9 @@ static void LocalWrapper_dealloc(LocalWrapperObject* self) {
 static PyObject*
 LocalWrapper_new(PyTypeObject* type, PyObject* args, PyObject* kwds) {
   PyObject* wrapped;
-  if (!PyArg_ParseTuple(args, "O", &wrapped))
+  if (!PyArg_ParseTuple(args, "O", &wrapped)) {
     return NULL;
+  }
 
   LocalWrapperObject* self = (LocalWrapperObject*)type->tp_alloc(type, 0);
   if (self != NULL) {
