@@ -4,6 +4,7 @@
 #define FT_UTIME_H
 
 #include <stddef.h>
+#include <stdint.h>
 
 typedef uint64_t ustimestamp_t;
 
