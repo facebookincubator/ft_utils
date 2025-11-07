@@ -5,7 +5,6 @@ import os
 import sys
 import sysconfig
 from pathlib import Path
-
 from setuptools import Extension, setup
 from setuptools.command.build_ext import build_ext
 
@@ -34,31 +33,31 @@ def build_extensions() -> list[Extension]:
     include_dirs = [
         python_include,
         os.path.join(python_include, "internal"),
-        "ft_utils/include",
+        "native/include",
     ]
 
     extensions = [
         Extension(
             "ft_utils._concurrency",
             sources=[
-                "ft_utils/native/_concurrency/_concurrency.c",
-                "ft_utils/native/_concurrency/ft_core.c",
+                "native/src/_concurrency.c",
+                "native/src/ft_core.c",
             ],
             include_dirs=include_dirs,
         ),
         Extension(
             "ft_utils._weave",
-            sources=["ft_utils/native/_weave/_weave.c"],
+            sources=["native/src/_weave.c"],
             include_dirs=include_dirs,
         ),
         Extension(
             "ft_utils.local",
-            sources=["ft_utils/native/local/local.c"],
+            sources=["native/src/local.c"],
             include_dirs=include_dirs,
         ),
         Extension(
             "ft_utils.synchronization",
-            sources=["ft_utils/native/synchronization/synchronization.c"],
+            sources=["native/src/synchronization.c"],
             include_dirs=include_dirs,
         ),
         Extension(
@@ -90,7 +89,7 @@ def invoke_main() -> None:
         author_email="open-source@fb.com",
         url="https://github.com/facebookincubator/ft_utils",
         license="MIT",
-        packages=["ft_utils", "ft_utils.native", "ft_utils.tests"],
+        packages=["ft_utils", "ft_utils.tests"],
         package_dir={"ft_utils": "ft_utils"},
         ext_modules=build_extensions(),
         cmdclass={"build_ext": BuildExtInplace},
