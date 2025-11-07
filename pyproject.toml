@@ -24,8 +24,7 @@ Issues = "https://github.com/facebookincubator/ft_utils/issues"
 Documentation = "https://github.com/facebookincubator/ft_utils/blob/main/docs/index.md"
 
 [tool.setuptools]
-packages = ["ft_utils"]
-package-dir = {"" = "src"}
+packages = ["ft_utils", "ft_utils.tests"]
 
 [tool.setuptools.package-data]
-ft_utils = ["*.pyi", "py.typed"]
+ft_utils = ["*.pyi", "py.typed", "*.so"]

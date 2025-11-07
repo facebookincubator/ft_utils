@@ -7,6 +7,25 @@ import sysconfig
 from pathlib import Path
 
 from setuptools import Extension, setup
+from setuptools.command.build_ext import build_ext
+
+
+class BuildExtInplace(build_ext):
+    """Custom build_ext to ensure extensions are placed in the correct package directory."""
+
+    def get_ext_fullpath(self, ext_name):
+        """Override to ensure extensions go to ft_utils/ directory."""
+        fullpath = super().get_ext_fullpath(ext_name)
+        # If running with --inplace, adjust the path to put files in ft_utils/ directory
+        if self.inplace:
+            # Change from ./_concurrency.so to ./ft_utils/_concurrency.so
+            filename = os.path.basename(fullpath)
+            # Get the package path from the extension name
+            parts = ext_name.split('.')
+            if parts[0] == 'ft_utils':
+                # Place in the ft_utils package directory
+                fullpath = os.path.join('ft_utils', filename)
+        return fullpath
 
 
 def build_extensions() -> list[Extension]:
@@ -15,41 +34,41 @@ def build_extensions() -> list[Extension]:
     include_dirs = [
         python_include,
         os.path.join(python_include, "internal"),
-        "src/include",
+        "ft_utils/include",
     ]
 
     extensions = [
         Extension(
             "ft_utils._concurrency",
             sources=[
-                "src/native/_concurrency/_concurrency.c",
-                "src/native/_concurrency/ft_core.c",
+                "ft_utils/native/_concurrency/_concurrency.c",
+                "ft_utils/native/_concurrency/ft_core.c",
             ],
             include_dirs=include_dirs,
         ),
         Extension(
             "ft_utils._weave",
-            sources=["src/native/_weave/_weave.c"],
+            sources=["ft_utils/native/_weave/_weave.c"],
             include_dirs=include_dirs,
         ),
         Extension(
             "ft_utils.local",
-            sources=["src/native/local/local.c"],
+            sources=["ft_utils/native/local/local.c"],
             include_dirs=include_dirs,
         ),
         Extension(
             "ft_utils.synchronization",
-            sources=["src/native/synchronization/synchronization.c"],
+            sources=["ft_utils/native/synchronization/synchronization.c"],
             include_dirs=include_dirs,
         ),
         Extension(
             "ft_utils._test_compat",
-            sources=["src/ft_utils/tests/_test_compat.c"],
+            sources=["ft_utils/tests/_test_compat.c"],
             include_dirs=include_dirs,
         ),
         Extension(
             "ft_utils._test_weave",
-            sources=["src/ft_utils/tests/_test_weave.c"],
+            sources=["ft_utils/tests/_test_weave.c"],
             include_dirs=include_dirs,
         ),
     ]
@@ -72,7 +91,9 @@ def invoke_main() -> None:
         url="https://github.com/facebookincubator/ft_utils",
         license="MIT",
         packages=["ft_utils", "ft_utils.native", "ft_utils.tests"],
+        package_dir={"ft_utils": "ft_utils"},
         ext_modules=build_extensions(),
+        cmdclass={"build_ext": BuildExtInplace},
         classifiers=[
             "Development Status :: 4 - Beta",
             "Intended Audience :: Developers",
