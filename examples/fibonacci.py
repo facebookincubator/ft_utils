@@ -10,8 +10,8 @@ import timeit
 from concurrent.futures import Executor
 from typing import Dict, Tuple
 
-from ft_utils.concurrency import AtomicInt64, ConcurrentDict, ConcurrentQueue
-from ft_utils.local import LocalWrapper
+from .concurrency import AtomicInt64, ConcurrentDict, ConcurrentQueue
+from .local import LocalWrapper
 
 cached = AtomicInt64()
 missed = AtomicInt64()

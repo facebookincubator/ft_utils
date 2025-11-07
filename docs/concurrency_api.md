@@ -27,7 +27,7 @@ ConcurrentDict does not support all the API methods of a built-in dict. It is de
 
 ### Example
 ```python
-from ft_utils.concurrency import ConcurrentDict
+from .concurrency import ConcurrentDict
 
 d = ConcurrentDict()
 d['key'] = 'value'
@@ -80,7 +80,7 @@ In addition the following numeric methods are implemented.
 ### Example
 
 ```python
-from ft_utils.concurrency import AtomicInt64
+from .concurrency import AtomicInt64
 
 i = AtomicInt64(10)
 print(i.get())  # prints 10
@@ -109,7 +109,7 @@ The `compare_exchange` method can be used in a loop to atomically update the ref
 ### Example
 
 ```python
-from ft_utils.concurrency import AtomicReference
+from .concurrency import AtomicReference
 
 r = AtomicReference(0)
 
@@ -140,7 +140,7 @@ A boolean flag that can be updated atomically.
 
 ### Example
 ```python
-from ft_utils.concurrency import AtomicFlag
+from .concurrency import AtomicFlag
 
 flag = AtomicFlag(True)
 print(flag)  # prints True
@@ -170,7 +170,7 @@ A concurrent iterator that gathers values from multiple threads and yields them 
 ### Example
 
 ```python
-from ft_utils.concurrency import ConcurrentGatheringIterator
+from .concurrency import ConcurrentGatheringIterator
 
 iterator = ConcurrentGatheringIterator()
 iterator.insert(0, 'value0')
@@ -184,7 +184,7 @@ for value in iterator.iterator(2):
 A more complex example:
 
 ```python
-from ft_utils.concurrency import ConcurrentGatheringIterator, AtomicInt64
+from .concurrency import ConcurrentGatheringIterator, AtomicInt64
 from concurrent.futures import ThreadPoolExecutor
 
 def insert_value(iterator, atomic_index, value):
@@ -259,7 +259,7 @@ On the other hand, the lock-based implementation is recommended for scenarios wh
 #### Example
 
 ```python
-from ft_utils.concurrency import ConcurrentQueue
+from .concurrency import ConcurrentQueue
 
 queue = ConcurrentQueue()
 
