@@ -534,7 +534,7 @@ static struct PyModuleDef_Slot module_slots[] = {
 static PyModuleDef local_module = {
     PyModuleDef_HEAD_INIT,
     "synchronization",
-    "Synchronization utilies for FTPython.",
+    "Synchronization utilities for FTPython.",
     0,
     NULL,
     module_slots,

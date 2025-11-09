@@ -436,7 +436,7 @@ static PyObject* LocalWrapper_index(LocalWrapperObject* self) {
   return PyNumber_Index(self->wrapped);
 }
 
-/* Matrix multplication is rare and complex so just let the
+/* Matrix multiplication is rare and complex so just let the
    interpreter handle it. This will cause ref counting on the
    stack so we can address this if we see issues. */
 static PyObject* LocalWrapper_matrix_multiply(
@@ -953,7 +953,7 @@ static struct PyModuleDef_Slot module_slots[] = {
 static PyModuleDef local_module = {
     PyModuleDef_HEAD_INIT,
     "local",
-    "Utilies to thread localize load and store of shared data.",
+    "Utilities to thread localize load and store of shared data.",
     0,
     NULL,
     module_slots,

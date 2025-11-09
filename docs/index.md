@@ -28,8 +28,8 @@ Welcome to the documentation for Free Threaded Python and the ft_utils library. 
 
 The `ft_utils.ENABLE_EXPERIMENTAL` flag defaults to False. When set to True some features are made available which are not fully supported and/or not fully backward compatible. The flag must be set before trying to use these features for the first time because of caching.
 
-## On Github
+## On GitHub
 
-* [Source on github](https://github.com/facebookincubator/ft_utils)
+* [Source on GitHub](https://github.com/facebookincubator/ft_utils)
 * [License - MIT](https://github.com/facebookincubator/ft_utils/blob/main/LICENSE)
 * [Readme](https://github.com/facebookincubator/ft_utils/blob/main/README.md)

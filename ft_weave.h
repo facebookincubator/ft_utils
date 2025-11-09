@@ -67,7 +67,7 @@ int unregister_wvls_destructor(void** wvls_variable_ptr);
 
 /* Below we have a number of static methods which is unusual in a header. The
    reason is to avoid linking between shared objects and/or multiple different
-   defintions of the methods at link time. This approach ensures each
+   definitions of the methods at link time. This approach ensures each
    translation unit has its own version of the functions and these are not
    visible outside the translation unit at link time. */
 
@@ -99,7 +99,7 @@ static inline PyObject* _py_get_function(
   return pFunc;
 }
 
-/* A function to call from the C ABI which will use the Python interpretor to
+/* A function to call from the C ABI which will use the Python interpreter to
    register a destructor. This allow the use of this header only in other
    modules and prevents inter-extension runtime communication other than through
    Python itself.  Returns zero on success, one on failure.*/

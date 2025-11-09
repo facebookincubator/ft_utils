@@ -21,7 +21,7 @@ _BATCH_RAND = BatchExecutor(lambda: random.getrandbits(32), 1024)
 
 
 # Use these for random manipulations as they are much more performant
-# in FTPython under contention thant the random.* alternatives.
+# in FTPython under contention than the random.* alternatives.
 def ft_randint(a: int, b: int) -> int:
     if a > b:
         a, b = b, a

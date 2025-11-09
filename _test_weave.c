@@ -83,7 +83,7 @@ static void test_destructor_add_2(void* addr) {
 
 /* Returns a Python integer that represents whether or not the destructor was
  * properly called with the correct value. If it was not, an error is raised.
- * Otherwise it returns the nubmer of times the destructor was called.
+ * Otherwise it returns the number of times the destructor was called.
  */
 static PyObject* test_weave_get_destructor_called_1(
     PyObject* Py_UNUSED(self),
@@ -107,7 +107,7 @@ static PyObject* test_weave_get_destructor_called_1(
 
 /* Returns a Python integer that represents whether or not the second destructor
  * was properly called with the correct value. If it was not, an error is
- * raised. Otherwise it returns the nubmer of times the destructor was called.
+ * raised. Otherwise it returns the number of times the destructor was called.
  */
 static PyObject* test_weave_get_destructor_called_2(
     PyObject* Py_UNUSED(self),

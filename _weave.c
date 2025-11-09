@@ -3,7 +3,7 @@
 #include "ft_compat.h"
 #include "ft_weave.h"
 
-/* Thead local storge definition.
+/* Thead local storage definition.
    ==============================
 */
 
@@ -238,7 +238,7 @@ void wvls_destructors_invoke(void* arg) {
   wvls_destructor_node_t* node = (wvls_destructor_node_t*)arg;
 
   /* Reverse the linked list to ensure destructor calling order matched
-     destrutor registration order. */
+     destructor registration order. */
   wvls_destructor_node_t* previous = NULL;
   while (node) {
     wvls_destructor_node_t* next_node = node->next;

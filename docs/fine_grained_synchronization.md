@@ -122,7 +122,7 @@ with cython.critical_section(my_object):
 ```
 
 The below is from the batch executor source code in ft_utils where a critical sections protects the refilling of the buffer. Note how the critical section
-protects the excution on a per-object basis compare to a mutex which would just be one a code block basis.
+protects the execution on a per-object basis compare to a mutex which would just be one a code block basis.
 ```c
     Py_BEGIN_CRITICAL_SECTION(self);
     index = _Py_atomic_load_ssize(&(self->index));
@@ -447,8 +447,8 @@ However:
 This makes it useful for compute kernels, not general Python concurrency.
 
 ## Closing Thoughts
-Most concurrency libraries try to protect you. FTPython with ft_utils does something different; it gives you the control you need to design for correctness, rather than depending on global serialization as a crutch. Not only that, it makes key things easy to get right and provides library support of scalability and inter-thread communication. For example, lower level languages like C will crash if something is not thread say, FTPython will not crash, it might give an unexpected result but it keeps on trucking. When you hit issues ft_utils can provide more sophisticated synchronisation like readers/write locks, atomics and ConcurrentDict to tidy up thread correctness without a big performace hit.
+Most concurrency libraries try to protect you. FTPython with ft_utils does something different; it gives you the control you need to design for correctness, rather than depending on global serialization as a crutch. Not only that, it makes key things easy to get right and provides library support of scalability and inter-thread communication. For example, lower level languages like C will crash if something is not thread say, FTPython will not crash, it might give an unexpected result but it keeps on trucking. When you hit issues ft_utils can provide more sophisticated synchronisation like readers/write locks, atomics and ConcurrentDict to tidy up thread correctness without a big performance hit.
 
-Unitl now, Python has never been suitable for finely tuned concurrent systems. With FTP and ft_utils, that changes. You get the primitives—now you decide how to build with them.
+Until now, Python has never been suitable for finely tuned concurrent systems. With FTP and ft_utils, that changes. You get the primitives—now you decide how to build with them.
 
 If you're working on systems where performance, determinism, or mixed-criticality scheduling matter, this is finally a Python that respects your intent.
