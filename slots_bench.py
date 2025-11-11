@@ -90,9 +90,9 @@ class SlotsBenchmarkProvider(BenchmarkProvider):
 
     def benchmark_hammer_update(self) -> None:
         obj = LocalWrapper(self._obj)
-        for i in range(self._operations):
+        for _ in range(self._operations):
             obj.a += 1
-        for i in range(self._operations // 10):
+        for _ in range(self._operations // 10):
             obj.a += obj.b
             obj.b += obj.a
 
