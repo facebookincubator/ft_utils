@@ -12,7 +12,7 @@ The following two functions are intended to be called from native code (see `ft_
 
 ## Native API
 
-`ft_weave.h` provides a header only implementation which in conjuction with having weave imported into the Python VM will permit access to weave's advanced threading features. The functions in the header will attempt to import ft_utils.weave if required.
+`ft_weave.h` provides a header only implementation which in conjunction with having weave imported into the Python VM will permit access to weave's advanced threading features. The functions in the header will attempt to import ft_utils.weave if required.
 
 * `weave_local`: A type modifier to mark a variable as using thread local storage. This name was chosen to avoid clashing with names such as thread_local in thread.h on Linux. However, when a compiler or header is used which correctly defines thread_local, then weave_local is redundant and you can use either with weave. For example `static weave_local void* tls_2 = NULL;`.
 * `typedef void (*wvls_destructor_t)(void*)`: A function called with a value of a thread local variable which is assumed to be a pointer to some structure which needs to be freed just before thread death. This function must not call into the Python interpreter in any way because we cannot guarantee any part of Python will be valid during the call.

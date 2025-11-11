@@ -230,7 +230,7 @@ A concurrent queue that allows multiple threads to push and pop values.
 *   `empty()`: Returns True if the queue is empty, False otherwise.
 
 ### Exceptions
-*   `ShutDown` raised to indicate the ConcurrentQueue is shutdown. In Python 3.13 and above `queue.ShutDown` is a type and this Exception will be an aliase for it. In earlier versions of Python concurrent defines its own ShutDown type to allow backward compatibility.
+*   `ShutDown` raised to indicate the ConcurrentQueue is shutdown. In Python 3.13 and above `queue.ShutDown` is a type and this Exception will be an alias for it. In earlier versions of Python concurrent defines its own ShutDown type to allow backward compatibility.
 *   'Empty' raised to indicate a pop/get operation timed out. This is the same as queue.Empty.
 
 ### Notes
@@ -242,7 +242,7 @@ A concurrent queue that allows multiple threads to push and pop values.
 
 #### Lock-Free Implementation
 
-The lock-free implementation of the queue uses a combination of atomic operations and careful synchronization to ensure thread safety without the need for locks. This approach can provide better performance and scalability in certain scenarios, particularly those with a large number of readers and writers. It will tend to consume more CPU in lightly loaded contitions than using the lock based approach.
+The lock-free implementation of the queue uses a combination of atomic operations and careful synchronization to ensure thread safety without the need for locks. This approach can provide better performance and scalability in certain scenarios, particularly those with a large number of readers and writers. It will tend to consume more CPU in lightly loaded conditions than using the lock based approach.
 
 In general, the lock-free implementation is recommended for scenarios where:
 

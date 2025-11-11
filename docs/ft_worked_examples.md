@@ -88,7 +88,7 @@ The Python runtime compiles this code into bytecode so let's look at the bytecod
 10 RETURN_VALUE
 ```
 
-In theory the GIL can switch threads at any point between these bytecodes. Most of the time it will not because this is a very short piece of code and because in the example code it is run at the start of a thread. However, in a production system issues like interupt handing or having the program swapped out or stopped (SIGSTOP) could easly cause a thread swap between bytecodes. Consider what happens if we get a thread swap between 4 and 6? This could result in a different thread updating `result` only to have its update overwritten.
+In theory the GIL can switch threads at any point between these bytecodes. Most of the time it will not because this is a very short piece of code and because in the example code it is run at the start of a thread. However, in a production system issues like interrupt handing or having the program swapped out or stopped (SIGSTOP) could easily cause a thread swap between bytecodes. Consider what happens if we get a thread swap between 4 and 6? This could result in a different thread updating `result` only to have its update overwritten.
 
 **Be warned that programs which appear consistent and atomic due to the GIL often become unstable in complex production systems.**
 

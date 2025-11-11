@@ -48,7 +48,7 @@ You will need a source code version of CPython. To run for Free Threaded Python,
 you will require CPython 3.13 and compile as 3.13t. This code will also compile under 3.12 but then you only get the
 GIL version.
 
-Please ensure you are in a virtual environment. If you cannot, or do not wish to do this then you will need to coomment
+Please ensure you are in a virtual environment. If you cannot, or do not wish to do this then you will need to comment
 out the call to check_env() in setup.py.
 
 Once you have everything in place, please execute setup.py as a python script:
