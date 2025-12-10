@@ -157,8 +157,18 @@ static int ConcurrentDict_traverse(
   return 0;
 }
 
+static Py_ssize_t ConcurrentDict_len(ConcurrentDictObject* self) {
+  Py_ssize_t total = 0;
+  for (Py_ssize_t i = 0; i < self->size; i++) {
+    if (self->buckets[i]) {
+      total += PyDict_Size(self->buckets[i]);
+    }
+  }
+  return total;
+}
+
 static PyMappingMethods ConcurrentDict_mapping = {
-    (lenfunc)0, // mp_length
+    (lenfunc)ConcurrentDict_len, // mp_length
     (binaryfunc)ConcurrentDict_getitem, // mp_subscript
     (objobjargproc)ConcurrentDict_setitem, // mp_ass_subscript
 };

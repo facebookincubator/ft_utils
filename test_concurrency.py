@@ -117,6 +117,17 @@ class TestConcurrentDict(unittest.TestCase):
         for i in range(1024):
             self.assertEqual(dct[i], -i)
 
+    def test_len(self):
+        dct = concurrency.ConcurrentDict()
+        self.assertEqual(len(dct), 0)
+        dct[1] = "a"
+        self.assertEqual(len(dct), 1)
+        dct[2] = "b"
+        dct[3] = "c"
+        self.assertEqual(len(dct), 3)
+        del dct[2]
+        self.assertEqual(len(dct), 2)
+
 
 class TestConcurrentDictGC(unittest.TestCase):
     def setUp(self):
