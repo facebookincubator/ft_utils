@@ -6,7 +6,6 @@ import asyncio
 import gc
 import traceback
 import unittest
-
 from contextlib import ContextDecorator
 
 from ft_utils.local import LocalWrapper

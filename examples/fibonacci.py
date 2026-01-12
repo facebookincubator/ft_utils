@@ -6,7 +6,6 @@ import argparse
 import concurrent.futures
 import random
 import timeit
-
 from concurrent.futures import Executor
 from typing import Dict, Tuple
 

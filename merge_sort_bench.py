@@ -143,7 +143,7 @@ class MergeSortBenchmark:
 
         print("Array is correctly sorted.")
         print(
-            f"Parameters: N_CPUS={self.n_cpus}, MAX_SIZE={self.max_size}, THRESHOLD={self.threshold}, MAX_THREADS={self.max_threads*2}"
+            f"Parameters: N_CPUS={self.n_cpus}, MAX_SIZE={self.max_size}, THRESHOLD={self.threshold}, MAX_THREADS={self.max_threads * 2}"
         )
         print(f"Time taken: {total_time} seconds")
         print(f"Peak_threads: {self.peak_threads}")

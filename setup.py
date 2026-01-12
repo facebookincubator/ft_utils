@@ -6,7 +6,6 @@ import os
 import shutil
 import sys
 import sysconfig
-
 from contextlib import contextmanager
 
 from setuptools import Extension, find_packages, setup

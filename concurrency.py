@@ -24,7 +24,6 @@ from ft_utils._concurrency import (
     ConcurrentDeque,
     ConcurrentDict,
 )
-
 from ft_utils.local import LocalWrapper
 
 

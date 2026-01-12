@@ -4,7 +4,6 @@
 
 import gc
 import weakref
-
 from typing import Any
 
 from ft_utils.benchmark_utils import (

@@ -8,7 +8,6 @@ import threading
 import unittest
 
 import ft_utils
-
 from ft_utils._test_weave import (  # @manual
     get_destructor_called_1,
     get_destructor_called_2,

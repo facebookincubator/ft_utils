@@ -6,7 +6,6 @@ import gc
 import random
 import unittest
 import weakref
-
 from concurrent.futures import ThreadPoolExecutor
 
 from ft_utils.local import BatchExecutor
