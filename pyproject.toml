@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools >= 77.0.3"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ft_utils"
+version = "0.1.0"
+authors = [
+  { name="Alex Turner", email="alexturner@meta.com" },
+]
+description = "A utility library for Free Threaded Python programming"
+readme = "README.md"
+requires-python = ">=3.13"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+license = "MIT"
+license-files = ["LICEN[CS]E*"]
+
+[project.urls]
+Homepage = "https://github.com/facebookincubator/ft_utils"
+Issues = "https://github.com/facebookincubator/ft_utils/issues"
+Documentation = "https://github.com/facebookincubator/ft_utils/blob/main/docs/index.md"
+
+[tool.setuptools]
+packages = ["ft_utils", "ft_utils.tests"]
+
+[tool.setuptools.package-data]
+ft_utils = ["*.pyi", "py.typed", "*.so"]
+"ft_utils.tests" = ["*.pyi"]

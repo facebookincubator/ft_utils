@@ -109,7 +109,7 @@ with synchronization.RWWriteContext(rw_lock) as write_lock:
 ```python
 import threading
 import time
-from ft_utils.synchronization import IntervalLock
+from .synchronization import IntervalLock
 
 def worker(lock, name):
     print(f"{name} is waiting to acquire the lock")
@@ -144,7 +144,7 @@ In this example, we create two threads that contend for the `IntervalLock`. Each
 ```python
 import threading
 import time
-from ft_utils.synchronization import ReaderWriterLock
+from .synchronization import ReaderWriterLock
 
 def reader(lock, name):
     print(f"{name} is waiting to acquire the read lock")
