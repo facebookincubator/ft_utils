@@ -32,6 +32,7 @@ def build_extensions() -> list[Extension]:
         python_include,
         os.path.join(python_include, "internal"),
         "native/include",
+        "native/src",
     ]
 
     extensions = [
