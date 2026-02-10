@@ -41,6 +41,10 @@ def build_extensions() -> list[Extension]:
             sources=[
                 "native/src/_concurrency.c",
                 "native/src/ft_core.c",
+                "native/src/concurrent_data_structures/concurrent_dict.c",
+                "native/src/concurrent_data_structures/atomic_int64.c",
+                "native/src/concurrent_data_structures/atomic_reference.c",
+                "native/src/concurrent_data_structures/concurrent_deque.c",
             ],
             include_dirs=include_dirs,
         ),
