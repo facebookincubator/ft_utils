@@ -105,6 +105,7 @@ def invoke_main() -> None:
         "--mode",
         type=str,
         choices=("threads", "fast_threads", "processes"),
+        default="threads",
         help="Operation mode: threads | fast_threads | processes.",
     )
 
@@ -122,9 +123,6 @@ def invoke_main() -> None:
         case "processes":
             executor_type = concurrent.futures.ProcessPoolExecutor
             to_execute = fib_tasks
-
-        case _:
-            raise RuntimeError("Code should never get here")
 
     def calculate_fibonacci():  # pyre-ignore
         with executor_type(max_workers=args.workers) as executor:
