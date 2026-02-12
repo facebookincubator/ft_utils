@@ -25,9 +25,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - wheel: "linux-3.12"
-            os: ubuntu-latest
-            CIBW_BUILD: "cp312-*"
           - wheel: "linux-3.13"
             os: ubuntu-latest
             CIBW_BUILD: "cp313-*"
@@ -36,9 +33,6 @@ jobs:
             CIBW_BUILD: "cp313t-*"
             CIBW_ENABLE: "cpython-freethreading"
 
-          - wheel: "windows-3.12"
-            os: windows-latest
-            CIBW_BUILD: "cp312-win_amd64"
           - wheel: "windows-3.13"
             os: windows-latest
             CIBW_BUILD: "cp313-*"
@@ -47,9 +41,6 @@ jobs:
             CIBW_BUILD: "cp313t-*"
             CIBW_ENABLE: "cpython-freethreading"
 
-          - wheel: "macos-3.12"
-            os: macos-latest
-            CIBW_BUILD: "cp312-*"
           - wheel: "macos-3.13"
             os: macos-latest
             CIBW_BUILD: "cp313-*"
