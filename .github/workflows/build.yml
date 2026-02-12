@@ -108,10 +108,10 @@ jobs:
         run: python setup.py bdist_wheel
 
       - name: Repair Python wheels
-        run: auditwheel --verbose repair --plat manylinux_2_34_x86_64 build/dist/*.whl
+        run: auditwheel --verbose repair --plat manylinux_2_34_x86_64 dist/*.whl
 
       - name: Install wheels
-        run: python -m pip install build/dist/*.whl
+        run: python -m pip install wheelhouse/*.whl
 
       - name: Test Python wheels
         run: |
