@@ -96,15 +96,15 @@ def invoke_main() -> None:
     print()
 
     print_results("threads tracked", single_multiply_threads_tracked)
-    print(f"Peak theads is {peak_threads}")
+    print(f"Peak threads is {peak_threads}")
     print()
 
     print_results("very long load", single_multiply_long)
-    print(f"Peak theads is {peak_threads}")
+    print(f"Peak threads is {peak_threads}")
     print()
 
     print_results("fully consistent", single_multiply_consistent)
-    print(f"Peak theads is {peak_threads}")
+    print(f"Peak threads is {peak_threads}")
     print()
 
 

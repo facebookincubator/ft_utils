@@ -106,17 +106,17 @@ Results from a simple example
 Results from a threads tracked example
     Threaded  Result = 93174.3733866435
     Reference Result = 93174.3733866435
-Peak theads is 1
+Peak threads is 1
 
 Results from a very long load example
     Threaded  Result = 93174.37338664389
     Reference Result = 93174.37338664355
-Peak theads is 10
+Peak threads is 10
 
 Results from a fully consistent example
     Threaded  Result = 93174.37338664355
     Reference Result = 93174.37338664355
-Peak theads is 1
+Peak threads is 1
 ```
 
 'simple example' is just the same logic as in the introduction example above. 'tracked example' shows us the real reason the multi-threaded code gives consistent results: there is only ever one thread running through the function.
@@ -136,17 +136,17 @@ Results from a simple example
 Results from a threads tracked example
     Threaded  Result = 93174.3733866435
     Reference Result = 93174.3733866435
-Peak theads is 1
+Peak threads is 1
 
 Results from a very long load example
     Threaded  Result = inf
     Reference Result = 93174.37338664355
-Peak theads is 10
+Peak threads is 10
 
 Results from a fully consistent example
     Threaded  Result = 93174.37338664355
     Reference Result = 93174.37338664355
-Peak theads is 1
+Peak threads is 1
 ```
 
 We can see that even with NoGIL the simple threaded approach still only has one thread at a time running through our function at once. This shows just how easy it is to make code which looks thread consistent but is not!
