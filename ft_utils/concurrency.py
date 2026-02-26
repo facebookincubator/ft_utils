@@ -40,10 +40,10 @@ class AtomicFlag:
 
 class ConcurrentGatheringIterator:
     """
-    A concurrent gathering iterator which values from many
-    threads and pass them to a reader in order based on integer key..
+    A concurrent gathering iterator which gathers values from many
+    threads and passes them to a reader in order based on integer key.
 
-    The  keys are integers starting from 0 and increasing monotonically.
+    The keys are integers starting from 0 and increasing monotonically.
     Insertions can be out of order and from multiple threads.
 
     The reading iterator starts from key 0 and increments, checking for the existence of the key in the dictionary.
