@@ -183,9 +183,9 @@ class ConcurrentQueue:
 
     def empty(self) -> bool:
         """
-        Gets the number of elements currently in the queue.
+        Checks if the queue is empty.
         Returns:
-            Int: The number of elements in the queue.
+            bool: True if the queue is empty, False otherwise.
         """
         return self.size() == 0
 
