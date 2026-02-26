@@ -81,9 +81,9 @@ def benchmark_operation(operation_func: Callable[[], None]) -> float:
     """
     Measures the time taken to perform a specified operation.
     """
-    start_time = time.time()
+    start_time = time.monotonic()
     operation_func()
-    end_time = time.time()
+    end_time = time.monotonic()
     return end_time - start_time
 
 

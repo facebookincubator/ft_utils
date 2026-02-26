@@ -52,7 +52,7 @@ class TestBenchmarkUtils(unittest.TestCase):
         self.assertEqual(args.operations, 1000)
         self.assertEqual(args.threads, 16)
 
-    @patch("time.time", side_effect=[1, 2])
+    @patch("time.monotonic", side_effect=[1, 2])
     def test_benchmark_operation(self, mock_time):
         barrier = MagicMock()
         barrier.wait = MagicMock()
