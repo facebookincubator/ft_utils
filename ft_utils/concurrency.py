@@ -74,7 +74,7 @@ class ConcurrentGatheringIterator:
         """
         try:
             self._dict[key] = value
-        except:
+        except Exception:
             self._failed.set(True)
             raise
         finally:
@@ -165,7 +165,7 @@ class ConcurrentQueue:
             raise ShutDown
         try:
             self._dict[self._inkey.incr()] = value
-        except:
+        except Exception:
             self._flags |= self._FAILED
             raise
         finally:
