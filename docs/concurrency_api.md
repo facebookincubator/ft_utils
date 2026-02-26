@@ -32,9 +32,9 @@ from .concurrency import ConcurrentDict
 d = ConcurrentDict()
 d['key'] = 'value'
 print(d['key'])  # prints 'value'
-print('key' in d))  # prints True
+print('key' in d)  # prints True
 del d['key']
-print('key' in d))  # prints False
+print('key' in d)  # prints False
 ```
 
 ## AtomicInt64
@@ -86,7 +86,7 @@ i = AtomicInt64(10)
 print(i.get())  # prints 10
 i.incr()
 print(i.get())  # prints 11
-i.add(5)
+i += 5
 print(i.get())  # prints 16
 ```
 
