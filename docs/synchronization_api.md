@@ -144,7 +144,7 @@ In this example, we create two threads that contend for the `IntervalLock`. Each
 ```python
 import threading
 import time
-from .synchronization import ReaderWriterLock
+from .synchronization import RWLock
 
 def reader(lock, name):
     print(f"{name} is waiting to acquire the read lock")
@@ -166,7 +166,7 @@ def writer(lock, name):
     print(f"{name} has finished writing")
     lock.unlock_write()
 
-lock = ReaderWriterLock()  # Create a ReaderWriterLock
+lock = RWLock()  # Create a ReaderWriterLock
 
 # Create three threads that will contend for the lock
 thread1 = threading.Thread(target=reader, args=(lock, "Reader 1"))
