@@ -198,7 +198,7 @@ class ConcurrentQueue:
             Shutting down the queue will prevent further elements from being added or removed.
         """
         # There is no good way to make the ordering of immediate shutdown deterministic and still
-        # allow the queue to be truly concurrent. shutown immediate is therefpre 'as soon as possible'.
+        # allow the queue to be truly concurrent. Shutdown immediate is therefore 'as soon as possible'.
         self._flags |= self._SHUTDOWN
         if immediate:
             self._flags |= self._SHUT_NOW
@@ -302,7 +302,7 @@ class ConcurrentQueue:
                 return value
             except KeyError:
                 countdown -= 1
-                # Spinning on yield here can causes performance collapse in the scheduler, so if we don't get
+                # Spinning on yield here can cause performance collapse in the scheduler, so if we don't get
                 # a value quickly, just let other threads catch up.
                 if countdown > 95:
                     _sleep(0)
@@ -359,7 +359,7 @@ class ConcurrentQueue:
         # The advantage of this less efficient logic is we know for sure that the key is in the dict here.
         value = _dict[next_key]
         del _dict[next_key]
-        # In the case that are having huge chains of place holders to placeholders then the stack will blow out
+        # In the case that we are having huge chains of place holders to placeholders then the stack will blow out
         # which is probably a good guard against overloaded queues so we will leave this as recursive to check
         # for that situation and keep the logic simple.
         if type(value) is ConcurrentQueue._PlaceHolder:
