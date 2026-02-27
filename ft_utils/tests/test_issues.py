@@ -1,6 +1,6 @@
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 
-# pyre-unsafe
+# pyre-strict
 
 import threading
 import unittest
@@ -9,19 +9,21 @@ from ft_utils.concurrency import ConcurrentDict
 
 
 class TestFoundIssues(unittest.TestCase):
-    def test_13_dict_race(self):
-        d = ConcurrentDict()
-        data = {k: 0 for k in range(10)}
+    def test_13_dict_race(self) -> None:
+        d: ConcurrentDict[int, int] = ConcurrentDict()
+        data: dict[int, int] = {k: 0 for k in range(10)}
         for k, v in data.items():
             d[k] = v
         self.assertEqual(len(d.as_dict()), 10)
 
-        def incr():
-            keys = list(range(10))
+        def incr() -> None:
+            keys: list[int] = list(range(10))
             for _ in range(500_000):
-                d[keys[_ % len(keys)]] += 1
+                d[keys[_ % len(keys)]] += 1  # pyre-ignore[16]
 
-        threads = [threading.Thread(target=incr) for _ in range(3)]
+        threads: list[threading.Thread] = [
+            threading.Thread(target=incr) for _ in range(3)
+        ]
 
         for t in threads:
             t.start()

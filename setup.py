@@ -10,7 +10,7 @@ from setuptools.command.build_ext import build_ext
 class BuildExtInplace(build_ext):
     """Custom build_ext to ensure extensions are placed in the correct package directory."""
 
-    def get_ext_fullpath(self, ext_name):
+    def get_ext_fullpath(self, ext_name: str) -> str:
         """Override to ensure extensions go to ft_utils/ directory."""
         fullpath = super().get_ext_fullpath(ext_name)
         # If running with --inplace, adjust the path to put files in ft_utils/ directory
