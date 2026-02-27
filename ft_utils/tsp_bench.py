@@ -7,7 +7,6 @@ import threading
 import time
 from collections.abc import Callable
 from concurrent.futures import Future, ThreadPoolExecutor
-from typing import Any
 
 # pyre-strict
 
@@ -124,15 +123,16 @@ def generate_matrix(matrix: list[list[int]]) -> None:
 
 
 class ExceptionWrapper:
-    def __init__(self, func: Callable[..., Any]) -> None:  # pyre-ignore[2]
+    def __init__(self, func: Callable[..., object]) -> None:
         self.func = func
         self.exception: Exception | None = None
 
-    def __call__(self, *args: Any, **kwargs: Any) -> Any:  # pyre-ignore[3]
+    def __call__(self, *args: object, **kwargs: object) -> object | None:
         try:
             return self.func(*args, **kwargs)
         except Exception as e:
             self.exception = e
+            return None
 
 
 def run_test(test_number: int, matrix: list[list[int]]) -> None:

@@ -1,6 +1,6 @@
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 
-# pyre-unsafe
+# pyre-strict
 
 import argparse
 import array
@@ -25,7 +25,7 @@ class MergeSortBenchmark:
         self.n_cpus: int = n_cpus
         self.max_size: int = max_size
         self.threshold: int = threshold
-        self.target: array.array = array.array(
+        self.target: array.array[int] = array.array(
             "i", [random.randint(0, 9999) for _ in range(self.max_size)]
         )
         self.lock: threading.Lock = threading.Lock()
@@ -44,13 +44,13 @@ class MergeSortBenchmark:
 
     @staticmethod
     def merge(
-        target: array.array | LocalWrapper, left: int, mid: int, right: int
+        target: array.array[int] | LocalWrapper, left: int, mid: int, right: int
     ) -> None:
         n1: int = mid - left + 1
         n2: int = right - mid
 
-        L: array.array = target[left : left + n1]
-        R: array.array = target[mid + 1 : mid + 1 + n2]
+        L: array.array[int] = target[left : left + n1]
+        R: array.array[int] = target[mid + 1 : mid + 1 + n2]
 
         i: int = 0
         j: int = 0
@@ -76,7 +76,7 @@ class MergeSortBenchmark:
             k += 1
 
     def sequential_merge_sort(
-        self, target: array.array | LocalWrapper, left: int, right: int
+        self, target: array.array[int] | LocalWrapper, left: int, right: int
     ) -> None:
         if left < right:
             mid: int = left + (right - left) // 2
@@ -86,7 +86,7 @@ class MergeSortBenchmark:
 
     def merge_sort(
         self,
-        target: array.array | LocalWrapper,
+        target: array.array[int] | LocalWrapper,
         left: int,
         right: int,
         new_thread: bool = False,
@@ -104,10 +104,10 @@ class MergeSortBenchmark:
             if right - left > self.threshold:
                 if self.thread_counter < self.max_threads:
                     with concurrent.futures.ThreadPoolExecutor() as executor:
-                        future1: concurrent.futures.Future = executor.submit(
+                        future1: concurrent.futures.Future[None] = executor.submit(
                             self.merge_sort, target, left, mid, True
                         )
-                        future2: concurrent.futures.Future = executor.submit(
+                        future2: concurrent.futures.Future[None] = executor.submit(
                             self.merge_sort, target, mid + 1, right, True
                         )
                     future1.result()

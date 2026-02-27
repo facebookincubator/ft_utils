@@ -4,7 +4,6 @@
 
 import gc
 import weakref
-from typing import Any
 
 from ft_utils.benchmark_utils import (
     BenchmarkProvider,
@@ -20,14 +19,14 @@ class SlotClass:
 
     def __init__(
         self,
-        a: Any = None,  # pyre-ignore[2]
-        b: Any = None,  # pyre-ignore[2]
-        c: Any = None,  # pyre-ignore[2]
-        d: Any = None,  # pyre-ignore[2]
-        e: Any = None,  # pyre-ignore[2]
-        f: Any = None,  # pyre-ignore[2]
-        g: Any = None,  # pyre-ignore[2]
-        h: Any = None,  # pyre-ignore[2]
+        a: object = None,
+        b: object = None,
+        c: object = None,
+        d: object = None,
+        e: object = None,
+        f: object = None,
+        g: object = None,
+        h: object = None,
     ) -> None:
         self.a = a
         self.b = b

@@ -3,7 +3,6 @@
 # pyre-strict
 
 import threading
-from typing import Any, Optional
 
 from ft_utils.benchmark_utils import BenchmarkProvider, execute_benchmarks, ft_randint
 from ft_utils.concurrency import AtomicReference
@@ -11,25 +10,25 @@ from ft_utils.local import LocalWrapper
 
 
 class LockedReference:
-    def __init__(self, value: Any | None) -> None:  # pyre-ignore[2]
+    def __init__(self, value: object | None) -> None:
         self._value = value
         self._lock = threading.Lock()
 
-    def set(self, value: Any) -> None:  # pyre-ignore[2]
+    def set(self, value: object) -> None:
         with self._lock:
             self._value = value
 
-    def get(self) -> Any:  # pyre-ignore[3]
+    def get(self) -> object:
         with self._lock:
             return self._value
 
-    def exchange(self, value: Any) -> Any:  # pyre-ignore
+    def exchange(self, value: object) -> object | None:
         with self._lock:
             old_value = self._value
             self._value = value
             return old_value
 
-    def compare_exchange(self, expected, value: Any) -> Any:  # pyre-ignore
+    def compare_exchange(self, expected: object, value: object) -> bool:
         with self._lock:
             if self._value is not expected:
                 return False

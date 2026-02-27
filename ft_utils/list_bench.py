@@ -2,10 +2,12 @@
 
 # pyre-strict
 
-from typing import Any
+from typing import TypeVar
 
 from ft_utils.benchmark_utils import BenchmarkProvider, execute_benchmarks, ft_randint
 from ft_utils.local import LocalWrapper
+
+_T = TypeVar("_T")
 
 
 class ListBenchmarkProvider(BenchmarkProvider):
@@ -15,7 +17,7 @@ class ListBenchmarkProvider(BenchmarkProvider):
         ll = []
         for _ in range(1024):
             ll.append(ll)
-        self._ref_list: list[Any] = ll  # pyre-ignore[4]
+        self._ref_list: list[object] = ll
 
     def benchmark_random_read_int(self) -> None:
         lst = LocalWrapper(self._int_list)
@@ -76,7 +78,7 @@ class ListBenchmarkProvider(BenchmarkProvider):
     def benchmark_concurrent_resize_read_write_ref(self) -> None:
         self._crrw(self._ref_list)
 
-    def _crrw(self, lst_in: list[Any]) -> None:  # pyre-ignore[2]
+    def _crrw(self, lst_in: list[_T]) -> None:
         lst = LocalWrapper(lst_in)
         num_operations = self._operations
         for idx in range(num_operations):

@@ -16,8 +16,6 @@ except ImportError:
         pass
 
 
-from typing import Any
-
 from ft_utils._concurrency import (
     AtomicInt64,
     AtomicReference,
@@ -64,13 +62,13 @@ class ConcurrentGatheringIterator:
         # it is safe and clear to use one here.
         self._failed = AtomicFlag(False)
 
-    def insert(self, key: int, value: Any) -> None:  # type: ignore
+    def insert(self, key: int, value: object) -> None:  # type: ignore
         """
         Inserts a key-value pair into the dictionary.
 
         Args:
         key (int): The key to insert.
-        value (Any): The value associated with the key.
+        value (object): The value associated with the key.
         """
         try:
             self._dict[key] = value
@@ -81,7 +79,7 @@ class ConcurrentGatheringIterator:
             with self._cond:
                 self._cond.notify_all()
 
-    def iterator(self, max_key: int, clear: bool = True) -> Iterator[Any]:  # type: ignore
+    def iterator(self, max_key: int, clear: bool = True) -> Iterator[object]:  # type: ignore
         """
         Returns an iterator that reads and deletes key-value pairs from the dictionary in order.
         This will block if the next value is not available.
@@ -92,7 +90,7 @@ class ConcurrentGatheringIterator:
         clear (bool): Delete the key/value pair after reading
 
         Yields:
-        Any: The value associated with the current key.
+        object: The value associated with the current key.
         """
         key = 0
         _dict = LocalWrapper(self._dict)
@@ -118,7 +116,7 @@ class ConcurrentGatheringIterator:
             yield value
             key += 1
 
-    def iterator_local(self, max_key: int, clear: bool = True) -> Iterator[Any]:  # type: ignore
+    def iterator_local(self, max_key: int, clear: bool = True) -> Iterator[object]:  # type: ignore
         yield from (LocalWrapper(value) for value in self.iterator(max_key, clear))
 
 
@@ -152,11 +150,11 @@ class ConcurrentQueue:
         self._outkey = AtomicInt64(0)
         self._lock_free = lock_free
 
-    def push(self, value: Any) -> None:  # type: ignore
+    def push(self, value: object) -> None:  # type: ignore
         """
         Adds an element to the end of the queue.
         Args:
-            value (Any): The element to add to the queue.
+            value (object): The element to add to the queue.
         Raises:
             Exception: If an error occurs while adding the element to the queue.
             ShutDown: If the instance is shutdown.
@@ -208,14 +206,14 @@ class ConcurrentQueue:
             with self._cond:
                 self._cond.notify_all()
 
-    def pop(self, timeout: float | None = None) -> Any:  # type: ignore
+    def pop(self, timeout: float | None = None) -> object:  # type: ignore
         """
         Removes and returns an element from the front of the queue.
         Args:
             timeout (float | None, optional): The maximum time to wait for an element to become available.
             Defaults to None.
         Returns:
-            Any: The removed element.
+            object: The removed element.
         Raises:
             Empty: If the queue is empty and the timeout expires.
             ShutDown: If the queue is shutting down - i.e. shutdown() has been called.
@@ -322,7 +320,7 @@ class ConcurrentQueue:
     # pyre-ignore
     def _load_placeholder(
         self, holder: _PlaceHolder, timeout: float | None, start: float
-    ) -> Any:
+    ) -> object:
         # We simplify the logic so we just check if the key is in the dict and wait lock free if there is a timeout
         # or we are inherently lock free. The aim is to reduce any chance of complex interactions of the condition
         # and the use of place holders.
@@ -408,7 +406,7 @@ class StdConcurrentQueue(ConcurrentQueue):
     def qsize(self) -> int:
         return self.size()
 
-    def get(self, block: bool = True, timeout: float | None = None) -> Any:  # type: ignore
+    def get(self, block: bool = True, timeout: float | None = None) -> object:  # type: ignore
         if block and timeout != 0.0:
             return self.pop(timeout=timeout)
         else:
@@ -422,7 +420,9 @@ class StdConcurrentQueue(ConcurrentQueue):
         _maxsize = self._maxsize
         return bool(_maxsize and self.size() >= _maxsize)
 
-    def put(self, item: Any, block: bool = True, timeout: float | None = None) -> None:  # type: ignore
+    def put(
+        self, item: object, block: bool = True, timeout: float | None = None
+    ) -> None:  # type: ignore
         if block and self._maxsize and self.full():
             _flags = LocalWrapper(self._flags)
             _shutdown = self._SHUTDOWN
@@ -452,10 +452,10 @@ class StdConcurrentQueue(ConcurrentQueue):
         # The push succeeded so we can do this here.
         self._active_tasks.incr()
 
-    def put_nowait(self, item: Any) -> None:  # type: ignore
+    def put_nowait(self, item: object) -> None:  # type: ignore
         return self.put(item, block=False)
 
-    def get_nowait(self) -> Any:  # type: ignore
+    def get_nowait(self) -> object:  # type: ignore
         return self.get(block=False)
 
     def task_done(self) -> None:
