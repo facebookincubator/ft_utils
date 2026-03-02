@@ -1,71 +1,74 @@
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 
-# pyre-unsafe
+# pyre-strict
 
 import asyncio
 import gc
 import traceback
+import types
 import unittest
+from collections.abc import Iterator
 from contextlib import ContextDecorator
+from typing import Any
 
 from ft_utils.local import LocalWrapper
 
 
 class TestLocalWrapperSmokes(unittest.TestCase):
-    def setUp(self):
-        self.obj = [1, 2, 3]
-        self.wrapper = LocalWrapper(self.obj)
+    def setUp(self) -> None:
+        self.obj: list[int] = [1, 2, 3]
+        self.wrapper: LocalWrapper = LocalWrapper(self.obj)
 
-    def test_constructor(self):
+    def test_constructor(self) -> None:
         self.assertIsNotNone(self.wrapper)
         self.assertEqual(self.wrapper.wrapped, self.obj)
 
-    def test_getattr(self):
+    def test_getattr(self) -> None:
         self.assertEqual(self.wrapper.append, self.obj.append)
 
-    def test_setattr(self):
+    def test_setattr(self) -> None:
         class Thing:
             pass
 
-        wrapper = LocalWrapper(Thing())
-        new_attr = 123
+        wrapper: LocalWrapper = LocalWrapper(Thing())
+        new_attr: int = 123
         wrapper.new_attr = new_attr
         self.assertEqual(wrapper.new_attr, new_attr)
 
-    def test_getitem(self):
+    def test_getitem(self) -> None:
         self.assertEqual(self.wrapper[1], self.obj[1])
 
-    def test_setitem(self):
+    def test_setitem(self) -> None:
         self.wrapper[1] = 100
         self.assertEqual(self.wrapper[1], 100)
 
-    def test_delitem(self):
+    def test_delitem(self) -> None:
         del self.wrapper[1]
         self.assertEqual(len(self.wrapper), 2)
 
-    def test_len(self):
+    def test_len(self) -> None:
         self.assertEqual(len(self.wrapper), len(self.obj))
 
-    def test_iter(self):
+    def test_iter(self) -> None:
         self.assertListEqual(list(iter(self.wrapper)), self.obj)
 
-    def test_call(self):
+    def test_call(self) -> None:
         self.wrapper.append(4)
         self.assertIn(4, self.wrapper)
 
-    def test_str(self):
+    def test_str(self) -> None:
         self.assertEqual(str(self.wrapper), str(self.obj))
 
-    def test_richcompare(self):
-        another_wrapper = LocalWrapper([1, 2, 3])
+    def test_richcompare(self) -> None:
+        another_wrapper: LocalWrapper = LocalWrapper([1, 2, 3])
         self.assertEqual(self.wrapper, another_wrapper)
 
-    def test_number_operations(self):
+    def test_number_operations(self) -> None:
         # Test a few number operations
         self.assertEqual(self.wrapper + [4, 5], self.obj + [4, 5])
         self.assertEqual(self.wrapper * 2, self.obj * 2)
 
-    def test_inplace_operations(self):
+    def test_inplace_operations(self) -> None:
         self.wrapper += [4, 5]
         self.obj += [4, 5]
         self.assertEqual(self.wrapper, self.obj)
@@ -73,8 +76,8 @@ class TestLocalWrapperSmokes(unittest.TestCase):
         self.obj *= 3
         self.assertEqual(self.wrapper, self.obj)
 
-    def test_inplace_operations_recursive(self):
-        id_checker = self.wrapper.wrapped
+    def test_inplace_operations_recursive(self) -> None:
+        id_checker: object = self.wrapper.wrapped
         self.wrapper += LocalWrapper([4, 5])
         self.assertIs(id_checker, self.wrapper.wrapped)
         self.assertIs(self.wrapper.wrapped, self.obj)
@@ -86,15 +89,15 @@ class TestLocalWrapperSmokes(unittest.TestCase):
         self.assertNotEqual(self.wrapper, self.obj)
         self.assertNotEqual(self.obj, self.wrapper)
 
-    def test_bool(self):
+    def test_bool(self) -> None:
         self.assertTrue(bool(self.wrapper))
 
-    def test_int_float(self):
-        num_wrapper = LocalWrapper(10)
+    def test_int_float(self) -> None:
+        num_wrapper: LocalWrapper = LocalWrapper(10)
         self.assertEqual(int(num_wrapper), 10)
         self.assertEqual(float(num_wrapper), 10.0)
 
-    def test_gc(self):
+    def test_gc(self) -> None:
         del self.wrapper
         gc.collect()
         self.assertTrue(gc.garbage == [])
@@ -109,14 +112,14 @@ class TestLocalWrapperSmokes(unittest.TestCase):
         gc.collect()
         self.assertTrue(gc.garbage == [])
 
-    def test_repr(self):
-        obj_repr = repr(self.obj)
-        wrapper_repr = repr(self.wrapper)
-        expected_repr = f"<LocalWrapper: {obj_repr}>"
+    def test_repr(self) -> None:
+        obj_repr: str = repr(self.obj)
+        wrapper_repr: str = repr(self.wrapper)
+        expected_repr: str = f"<LocalWrapper: {obj_repr}>"
         self.assertEqual(wrapper_repr, expected_repr)
 
-    def test_dict(self):
-        ld = LocalWrapper({})
+    def test_dict(self) -> None:
+        ld: LocalWrapper = LocalWrapper({})
         ld[1] = 2
         self.assertEqual(ld[1], 2)
         self.assertTrue(1 in ld)
@@ -132,9 +135,9 @@ class TestLocalWrapperSmokes(unittest.TestCase):
         for v in ld.values():
             self.assertEqual(v, 3)
 
-    def test_slice(self):
-        tp = 1, 2, 3, 4, 5, 6
-        w = LocalWrapper(tp)
+    def test_slice(self) -> None:
+        tp: tuple[int, ...] = (1, 2, 3, 4, 5, 6)
+        w: LocalWrapper = LocalWrapper(tp)
         self.assertIs(w[:], tp)
         self.assertEqual(w[:2], tp[:2])
         self.assertEqual(w[2:], tp[2:])
@@ -143,460 +146,465 @@ class TestLocalWrapperSmokes(unittest.TestCase):
 
 
 class TestLocalWrapperBytearray(unittest.TestCase):
-    def setUp(self):
-        self.wrapper = LocalWrapper(bytearray([1, 2]))
+    def setUp(self) -> None:
+        self.wrapper: LocalWrapper = LocalWrapper(bytearray([1, 2]))
 
-    def test_bytearray_addition(self):
+    def test_bytearray_addition(self) -> None:
         self.assertEqual(self.wrapper + self.wrapper, bytearray([1, 2, 1, 2]))
         self.assertEqual(self.wrapper + self.wrapper.wrapped, bytearray([1, 2, 1, 2]))
         self.assertEqual(self.wrapper.wrapped + self.wrapper, bytearray([1, 2, 1, 2]))
 
-    def test_bytearray_multiplication(self):
+    def test_bytearray_multiplication(self) -> None:
         self.assertEqual(self.wrapper * 2, bytearray([1, 2, 1, 2]))
 
-    def test_bytearray_eq(self):
+    def test_bytearray_eq(self) -> None:
         self.assertTrue(self.wrapper == self.wrapper.wrapped)
         self.assertTrue(self.wrapper.wrapped == self.wrapper)
 
 
 class TestLocalWrapperIterExtra(unittest.TestCase):
-    def setUp(self):
-        self.obj = (1, 2, 3)
-        self.wrapper = LocalWrapper(self.obj)
+    def setUp(self) -> None:
+        self.obj: tuple[int, ...] = (1, 2, 3)
+        self.wrapper: LocalWrapper = LocalWrapper(self.obj)
 
-    def test_empty_iter(self):
-        empty_wrapper = LocalWrapper([])
+    def test_empty_iter(self) -> None:
+        empty_wrapper: LocalWrapper = LocalWrapper([])
         self.assertListEqual(list(iter(empty_wrapper)), [])
 
-    def test_exception_in_iteration(self):
+    def test_exception_in_iteration(self) -> None:
         class CustomIterable:
-            def __iter__(self):
+            def __iter__(self) -> "CustomIterable":
                 return self
 
-            def __next__(self):
+            def __next__(self) -> None:
                 raise RuntimeError("Test Exception")
 
-        error_wrapper = LocalWrapper(CustomIterable())
+        error_wrapper: LocalWrapper = LocalWrapper(CustomIterable())
         with self.assertRaises(RuntimeError):
             list(iter(error_wrapper))
 
-    def test_multiple_iterations(self):
-        iter1 = tuple(iter(self.wrapper))
-        iter2 = tuple(iter(self.wrapper))
+    def test_multiple_iterations(self) -> None:
+        iter1: tuple[object, ...] = tuple(iter(self.wrapper))
+        iter2: tuple[object, ...] = tuple(iter(self.wrapper))
         self.assertEqual(iter1, self.obj)
         self.assertEqual(iter2, self.obj)
 
 
 class TestLocalWrapperHash(unittest.TestCase):
-    def setUp(self):
-        self.obj = "Hello World"
-        self.wrapper = LocalWrapper(self.obj)
+    def setUp(self) -> None:
+        self.obj: str = "Hello World"
+        self.wrapper: LocalWrapper = LocalWrapper(self.obj)
 
-    def test_hash(self):
-        obj_hash = hash(self.obj)
-        wrapper_hash = hash(self.wrapper)
+    def test_hash(self) -> None:
+        obj_hash: int = hash(self.obj)
+        wrapper_hash: int = hash(self.wrapper)
         self.assertEqual(wrapper_hash, obj_hash)
 
-    def test_hash_consistency(self):
-        wrapper_hash1 = hash(self.wrapper)
-        wrapper_hash2 = hash(self.wrapper)
+    def test_hash_consistency(self) -> None:
+        wrapper_hash1: int = hash(self.wrapper)
+        wrapper_hash2: int = hash(self.wrapper)
         self.assertEqual(wrapper_hash1, wrapper_hash2)
 
-    def test_hash_equality(self):
-        another_wrapper = LocalWrapper(self.obj)
+    def test_hash_equality(self) -> None:
+        another_wrapper: LocalWrapper = LocalWrapper(self.obj)
         self.assertEqual(hash(self.wrapper), hash(another_wrapper))
         another_wrapper = LocalWrapper(self.wrapper)
         self.assertEqual(hash(self.wrapper), hash(another_wrapper))
 
 
 class TestLocalWrapperBuffer(unittest.TestCase):
-    def setUp(self):
-        self.byte_array = bytearray(b"example data")
-        self.wrapper = LocalWrapper(self.byte_array)
+    def setUp(self) -> None:
+        self.byte_array: bytearray = bytearray(b"example data")
+        self.wrapper: LocalWrapper = LocalWrapper(self.byte_array)
 
-    def test_getbuffer(self):
+    def test_getbuffer(self) -> None:
         buf = memoryview(self.wrapper)
         self.assertEqual(buf.tobytes(), self.byte_array)
 
-    def test_releasebuffer(self):
+    def test_releasebuffer(self) -> None:
         buf = memoryview(self.wrapper)
         del buf
         # If no exceptions, assume success
         self.assertTrue(True)
 
-    def test_buffer_integrity(self):
+    def test_buffer_integrity(self) -> None:
         with memoryview(self.wrapper) as buf:
             buf[0] = ord("z")
         self.assertEqual(self.byte_array[0], ord("z"))
 
-    def test_buffer_type(self):
+    def test_buffer_type(self) -> None:
         buf = memoryview(self.wrapper)
         self.assertIsInstance(buf, memoryview)
 
 
 class NumberAPI:
-    def __init__(self, value):
-        self.value = value
+    def __init__(self, value: Any) -> None:
+        self.value: Any = value
 
-    def __add__(self, other):
+    def __add__(self, other: Any) -> Any:
         return self.value + other
 
-    def __sub__(self, other):
+    def __sub__(self, other: Any) -> Any:
         return self.value - other
 
-    def __mul__(self, other):
+    def __mul__(self, other: Any) -> Any:
         return self.value * other
 
-    def __truediv__(self, other):
+    def __truediv__(self, other: Any) -> Any:
         return self.value / other
 
-    def __floordiv__(self, other):
+    def __floordiv__(self, other: Any) -> Any:
         return self.value // other
 
-    def __mod__(self, other):
+    def __mod__(self, other: Any) -> Any:
         return self.value % other
 
-    def __pow__(self, other, modulus=None):
+    def __pow__(self, other: Any, modulus: Any = None) -> Any:
         return self.value**other
 
-    def __lshift__(self, other):
+    def __lshift__(self, other: Any) -> Any:
         return self.value << other
 
-    def __rshift__(self, other):
+    def __rshift__(self, other: Any) -> Any:
         return self.value >> other
 
-    def __and__(self, other):
+    def __and__(self, other: Any) -> Any:
         return self.value & other
 
-    def __or__(self, other):
+    def __or__(self, other: Any) -> Any:
         return self.value | other
 
-    def __xor__(self, other):
+    def __xor__(self, other: Any) -> Any:
         return self.value ^ other
 
-    def __iadd__(self, other):
+    def __iadd__(self, other: Any) -> "NumberAPI":
         self.value += other
         return self
 
-    def __isub__(self, other):
+    def __isub__(self, other: Any) -> "NumberAPI":
         self.value -= other
         return self
 
-    def __imul__(self, other):
+    def __imul__(self, other: Any) -> "NumberAPI":
         self.value *= other
         return self
 
-    def __itruediv__(self, other):
+    def __itruediv__(self, other: Any) -> "NumberAPI":
         self.value /= other
         return self
 
-    def __ifloordiv__(self, other):
+    def __ifloordiv__(self, other: Any) -> "NumberAPI":
         self.value //= other
         return self
 
-    def __imod__(self, other):
+    def __imod__(self, other: Any) -> "NumberAPI":
         self.value %= other
         return self
 
-    def __ipow__(self, other):
+    def __ipow__(self, other: Any) -> "NumberAPI":
         self.value **= other
         return self
 
-    def __ilshift__(self, other):
+    def __ilshift__(self, other: Any) -> "NumberAPI":
         self.value <<= other
         return self
 
-    def __irshift__(self, other):
+    def __irshift__(self, other: Any) -> "NumberAPI":
         self.value >>= other
         return self
 
-    def __iand__(self, other):
+    def __iand__(self, other: Any) -> "NumberAPI":
         self.value &= other
         return self
 
-    def __ior__(self, other):
+    def __ior__(self, other: Any) -> "NumberAPI":
         self.value |= other
         return self
 
-    def __ixor__(self, other):
+    def __ixor__(self, other: Any) -> "NumberAPI":
         self.value ^= other
         return self
 
-    def __invert__(self):
+    def __invert__(self) -> Any:
         return ~(self.value)
 
-    def __divmod__(self, other):
+    def __divmod__(self, other: Any) -> tuple[Any, Any]:
         return divmod(self.value, other)
 
-    def __pos__(self):
+    def __pos__(self) -> Any:
         return +(self.value)
 
-    def __neg__(self):
+    def __neg__(self) -> Any:
         return -(self.value)
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         if self is other:
             return True
         return self.value == other
 
-    def __int__(self):
+    def __int__(self) -> int:
         return int(self.value)
 
-    def __float__(self):
+    def __float__(self) -> float:
         return float(self.value)
 
 
 class TestLocalWrapperInt(unittest.TestCase):
-    def setUp(self):
-        self.num = 10
-        self.wrapper = LocalWrapper(self.num)
+    def setUp(self) -> None:
+        self.num: object = 10
+        self.wrapper: LocalWrapper = LocalWrapper(self.num)
 
-    def test_add(self):
-        result = self.wrapper + 5
+    def test_add(self) -> None:
+        result: object = self.wrapper + 5
         self.assertEqual(result, 15)
 
-    def test_subtract(self):
-        result = self.wrapper - 5
+    def test_subtract(self) -> None:
+        result: object = self.wrapper - 5
         self.assertEqual(result, 5)
 
-    def test_multiply(self):
-        result = self.wrapper * 5
+    def test_multiply(self) -> None:
+        result: object = self.wrapper * 5
         self.assertEqual(result, 50)
 
-    def test_divide(self):
-        result = self.wrapper / 2
+    def test_divide(self) -> None:
+        result: object = self.wrapper / 2
         self.assertEqual(result, 5)
 
-    def test_floor_divide(self):
-        result = self.wrapper // 3
+    def test_floor_divide(self) -> None:
+        result: object = self.wrapper // 3
         self.assertEqual(result, 3)
 
-    def test_modulus(self):
-        result = self.wrapper % 3
+    def test_modulus(self) -> None:
+        result: object = self.wrapper % 3
         self.assertEqual(result, 1)
 
-    def test_power(self):
-        result = self.wrapper**2
+    def test_power(self) -> None:
+        result: object = self.wrapper**2
         self.assertEqual(result, 100)
 
-    def test_negative(self):
-        result = -self.wrapper
+    def test_negative(self) -> None:
+        result: object = -self.wrapper
         self.assertEqual(result, -10)
 
-    def test_positive(self):
-        result = +self.wrapper
+    def test_positive(self) -> None:
+        result: object = +self.wrapper
         self.assertEqual(result, 10)
 
-    def test_absolute(self):
-        negative_wrapper = LocalWrapper(-10)
-        result = abs(negative_wrapper)
+    def test_absolute(self) -> None:
+        negative_wrapper: LocalWrapper = LocalWrapper(-10)
+        result: object = abs(negative_wrapper)
         self.assertEqual(result, 10)
 
-    def test_inplace_add(self):
+    def test_inplace_add(self) -> None:
         self.wrapper += 5
         self.assertEqual(self.wrapper, 15)
 
-    def test_inplace_subtract(self):
+    def test_inplace_subtract(self) -> None:
         self.wrapper -= 5
         self.assertEqual(self.wrapper, 5)
 
-    def test_inplace_multiply(self):
+    def test_inplace_multiply(self) -> None:
         self.wrapper *= 5
         self.assertEqual(self.wrapper, 50)
 
-    def test_inplace_divide(self):
+    def test_inplace_divide(self) -> None:
         self.wrapper /= 2
         self.assertEqual(self.wrapper, 5)
 
-    def test_inplace_floor_divide(self):
+    def test_inplace_floor_divide(self) -> None:
         self.wrapper //= 3
         self.assertEqual(self.wrapper, 3)
 
-    def test_inplace_modulus(self):
+    def test_inplace_modulus(self) -> None:
         self.wrapper %= 3
         self.assertEqual(self.wrapper, 1)
 
-    def test_inplace_power(self):
+    def test_inplace_power(self) -> None:
         self.wrapper **= 2
         self.assertEqual(self.wrapper, 100)
 
-    def test_bool(self):
+    def test_bool(self) -> None:
         self.assertTrue(bool(self.wrapper))
-        zero_wrapper = LocalWrapper(0)
+        zero_wrapper: LocalWrapper = LocalWrapper(0)
         self.assertFalse(bool(zero_wrapper))
 
-    def test_int(self):
+    def test_int(self) -> None:
         self.assertEqual(int(self.wrapper), 10)
 
-    def test_float(self):
+    def test_float(self) -> None:
         self.assertEqual(float(self.wrapper), 10.0)
 
-    def test_divmod(self):
+    def test_divmod(self) -> None:
         self.assertEqual(divmod(self.wrapper, 3), (3, 1))
 
-    def test_invertd(self):
+    def test_invertd(self) -> None:
         self.assertEqual(~self.wrapper, -11)
 
 
 class TestLocalWrapperNotImpl(unittest.TestCase):
-    def setUp(self):
-        self.not_num = object()
-        self.wrapper = LocalWrapper(self.not_num)
+    def setUp(self) -> None:
+        self.not_num: object = object()
+        self.wrapper: LocalWrapper = LocalWrapper(self.not_num)
 
-    def test_add(self):
+    def test_add(self) -> None:
         with self.assertRaises(TypeError):
             self.wrapper + 5
 
-    def test_subtract(self):
+    def test_subtract(self) -> None:
         with self.assertRaises(TypeError):
             self.wrapper - 5
 
-    def test_multiply(self):
+    def test_multiply(self) -> None:
         with self.assertRaises(TypeError):
             self.wrapper * 5
 
-    def test_divide(self):
+    def test_divide(self) -> None:
         with self.assertRaises(TypeError):
             self.wrapper / 2
 
-    def test_floor_divide(self):
+    def test_floor_divide(self) -> None:
         with self.assertRaises(TypeError):
             self.wrapper // 3
 
-    def test_modulus(self):
+    def test_modulus(self) -> None:
         with self.assertRaises(TypeError):
             self.wrapper % 3
 
-    def test_power(self):
+    def test_power(self) -> None:
         with self.assertRaises(TypeError):
             self.wrapper**2
 
-    def test_negative(self):
+    def test_negative(self) -> None:
         with self.assertRaises(TypeError):
             -self.wrapper
 
-    def test_positive(self):
+    def test_positive(self) -> None:
         with self.assertRaises(TypeError):
             +self.wrapper
 
-    def test_absolute(self):
+    def test_absolute(self) -> None:
         with self.assertRaises(TypeError):
             abs(self.wrapper)
 
-    def test_inplace_add(self):
+    def test_inplace_add(self) -> None:
         with self.assertRaises(TypeError):
             self.wrapper += 5
 
-    def test_inplace_subtract(self):
+    def test_inplace_subtract(self) -> None:
         with self.assertRaises(TypeError):
             self.wrapper -= 5
 
-    def test_inplace_multiply(self):
+    def test_inplace_multiply(self) -> None:
         with self.assertRaises(TypeError):
             self.wrapper *= 5
 
-    def test_inplace_divide(self):
+    def test_inplace_divide(self) -> None:
         with self.assertRaises(TypeError):
             self.wrapper /= 2
 
-    def test_inplace_floor_divide(self):
+    def test_inplace_floor_divide(self) -> None:
         with self.assertRaises(TypeError):
             self.wrapper //= 3
 
-    def test_inplace_modulus(self):
+    def test_inplace_modulus(self) -> None:
         with self.assertRaises(TypeError):
             self.wrapper %= 3
 
-    def test_inplace_power(self):
+    def test_inplace_power(self) -> None:
         with self.assertRaises(TypeError):
             self.wrapper **= 2
 
-    def test_bool(self):
+    def test_bool(self) -> None:
         class Thing:
-            def __bool__(self):
+            def __bool__(self) -> bool:
                 raise TypeError("Just to check")
 
-        wrapper = LocalWrapper(Thing())
+        wrapper: LocalWrapper = LocalWrapper(Thing())
         with self.assertRaises(TypeError):
             bool(wrapper)
 
-    def test_int(self):
+    def test_int(self) -> None:
         with self.assertRaises(TypeError):
             int(self.wrapper)
 
-    def test_float(self):
+    def test_float(self) -> None:
         with self.assertRaises(TypeError):
             float(self.wrapper)
 
-    def test_divmod(self):
+    def test_divmod(self) -> None:
         with self.assertRaises(TypeError):
             divmod(self.wrapper, 3)
 
-    def test_invertd(self):
+    def test_invertd(self) -> None:
         with self.assertRaises(TypeError):
             ~self.wrapper
 
 
 class AttrDel(ContextDecorator):
-    def __init__(self, obj, attr):
-        self.obj = obj
-        self.attr = attr
-        self.has_attr = hasattr(obj, attr)
+    def __init__(self, obj: type[object], attr: str) -> None:
+        self.obj: type[object] = obj
+        self.attr: str = attr
+        self.has_attr: bool = hasattr(obj, attr)
         if self.has_attr:
-            self.value = getattr(obj, attr)
+            self.value: object = getattr(obj, attr)
 
-    def __enter__(self):
+    def __enter__(self) -> None:
         if self.has_attr:
             delattr(self.obj, self.attr)
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        tb: types.TracebackType | None,
+    ) -> None:
         if self.has_attr:
             setattr(self.obj, self.attr, self.value)
 
 
 class TestLocalWrapperNumberAPI(TestLocalWrapperInt):
-    def setUp(self):
-        self.num = NumberAPI(10)
-        self.wrapper = LocalWrapper(self.num)
+    def setUp(self) -> None:
+        self.num: object = NumberAPI(10)
+        self.wrapper: LocalWrapper = LocalWrapper(self.num)
 
 
 class ASequence:
-    def __init__(self):
-        self._items = []
+    def __init__(self) -> None:
+        self._items: list[object] = []
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: Any) -> Any:
         return self._items[index]
 
-    def __setitem__(self, index, value):
+    def __setitem__(self, index: Any, value: Any) -> None:
         self._items[index] = value
 
-    def __delitem__(self, index):
+    def __delitem__(self, index: Any) -> None:
         del self._items[index]
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self._items)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[object]:
         return iter(self._items)
 
-    def __iadd__(self, other):
+    def __iadd__(self, other: Any) -> "ASequence":
         if other is self:
             self._items += self._items
         else:
             self._items += other
         return self
 
-    def append(self, item):
+    def append(self, item: object) -> None:
         self._items.append(item)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"ASequence({self._items})"
 
 
 class TestMutations(unittest.TestCase):
-    def testRemoveAdd(self):
-        num = NumberAPI(10)
-        wrapper = LocalWrapper(num)
+    def testRemoveAdd(self) -> None:
+        num: NumberAPI = NumberAPI(10)
+        wrapper: LocalWrapper = LocalWrapper(num)
         with AttrDel(NumberAPI, "__add__"):
             with self.assertRaisesRegex(
                 TypeError, "unsupported operand type.*NumberAPI.*int"
@@ -605,10 +613,10 @@ class TestMutations(unittest.TestCase):
         res = wrapper + 1
         self.assertEqual(res, 11)
 
-    def testAddAdd(self):
+    def testAddAdd(self) -> None:
         with AttrDel(NumberAPI, "__add__"):
-            num = NumberAPI(10)
-            wrapper = LocalWrapper(num)
+            num: NumberAPI = NumberAPI(10)
+            wrapper: LocalWrapper = LocalWrapper(num)
             with self.assertRaisesRegex(
                 TypeError, "unsupported operand type.*NumberAPI.*int"
             ):
@@ -616,52 +624,52 @@ class TestMutations(unittest.TestCase):
         res = wrapper + 1
         self.assertEqual(res, 11)
 
-    def testChangeWrapped(self):
-        wrapper = LocalWrapper(23)
+    def testChangeWrapped(self) -> None:
+        wrapper: LocalWrapper = LocalWrapper(23)
         with self.assertRaises(AttributeError):
             wrapper.wrapped = 24
 
-    def testChangeType(self):
+    def testChangeType(self) -> None:
         class Mutato(ASequence):
-            def __init__(self, seq):
+            def __init__(self, seq: list[object]) -> None:
                 super().__init__()
                 self._items = seq
 
-        mut = Mutato([1, 2, 3, 4])
-        wrapper = LocalWrapper(mut)
+        mut: Mutato = Mutato([1, 2, 3, 4])
+        wrapper: LocalWrapper = LocalWrapper(mut)
         wrapper += wrapper
-        mut.__class__ = NumberAPI
-        mut.__init__(0)
+        mut.__class__ = NumberAPI  # pyre-ignore[8]
+        mut.__init__(0)  # pyre-ignore[6, 16]
         wrapper += 23
         self.assertEqual(wrapper / 1, 23)
 
 
 class Matrix:
-    def __init__(self, rows, cols):
-        self.rows = rows
-        self.cols = cols
-        self.data = [[0 for _ in range(cols)] for _ in range(rows)]
+    def __init__(self, rows: int, cols: int) -> None:
+        self.rows: int = rows
+        self.cols: int = cols
+        self.data: list[list[int]] = [[0 for _ in range(cols)] for _ in range(rows)]
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int) -> list[int]:
         return self.data[index]
 
-    def __setitem__(self, index, value):
+    def __setitem__(self, index: int, value: list[int]) -> None:
         self.data[index] = value
 
-    def __matmul__(self, other):
+    def __matmul__(self, other: "Matrix") -> "Matrix":
         if self.cols != other.rows:
             raise ValueError("Matrices cannot be multiplied")
-        result = Matrix(self.rows, other.cols)
+        result: Matrix = Matrix(self.rows, other.cols)
         for i in range(self.rows):
             for j in range(other.cols):
                 for k in range(self.cols):
                     result[i][j] += self[i][k] * other[k][j]
         return result
 
-    def __imatmul__(self, other):
+    def __imatmul__(self, other: "Matrix") -> "Matrix":
         if self.cols != other.rows:
             raise ValueError("Matrices cannot be multiplied")
-        result = Matrix(self.rows, other.cols)
+        result: Matrix = Matrix(self.rows, other.cols)
         for i in range(self.rows):
             for j in range(other.cols):
                 for k in range(self.cols):
@@ -669,29 +677,29 @@ class Matrix:
         self.data = result.data
         return self
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return str(self.data)
 
 
 class TestLocalWrapperMatrix(unittest.TestCase):
-    def setUp(self):
-        m1 = Matrix(2, 2)
+    def setUp(self) -> None:
+        m1: Matrix = Matrix(2, 2)
         m1[0][0] = 1
         m1[0][1] = 2
         m1[1][0] = 3
         m1[1][1] = 4
-        m2 = Matrix(2, 2)
+        m2: Matrix = Matrix(2, 2)
         m2[0][0] = 5
         m2[0][1] = 6
         m2[1][0] = 7
         m2[1][1] = 8
-        self.m1 = m1
-        self.m2 = m2
-        self.wrapped1 = LocalWrapper(m1)
-        self.wrapped2 = LocalWrapper(m2)
+        self.m1: Matrix = m1
+        self.m2: Matrix = m2
+        self.wrapped1: LocalWrapper = LocalWrapper(m1)
+        self.wrapped2: LocalWrapper = LocalWrapper(m2)
 
-    def test_matrix_multiply(self):
-        result = self.m1 @ self.m2
+    def test_matrix_multiply(self) -> None:
+        result: object = self.m1 @ self.m2
         self.assertEqual(result.data, [[19, 22], [43, 50]])
         result = self.wrapped1 @ self.wrapped2
         self.assertEqual(result.data, [[19, 22], [43, 50]])
@@ -700,46 +708,46 @@ class TestLocalWrapperMatrix(unittest.TestCase):
         result = self.m1 @ self.wrapped2
         self.assertEqual(result.data, [[19, 22], [43, 50]])
 
-    def test_inplacematrix_multiply(self):
+    def test_inplacematrix_multiply(self) -> None:
         self.wrapped1 @= self.wrapped2
         self.assertEqual(self.m1.data, [[19, 22], [43, 50]])
 
 
 class TestLocalWrapperSequenceAPI(unittest.TestCase):
-    def setUp(self):
-        self.seq = [1, 2, 3, 4, 5]
-        self.wrapper = LocalWrapper(self.seq)
+    def setUp(self) -> None:
+        self.seq: list[int] = [1, 2, 3, 4, 5]
+        self.wrapper: LocalWrapper = LocalWrapper(self.seq)
 
-    def test_getitem(self):
+    def test_getitem(self) -> None:
         self.assertEqual(self.wrapper[2], 3)
 
-    def test_setitem(self):
+    def test_setitem(self) -> None:
         self.wrapper[2] = 99
         self.assertEqual(self.wrapper[2], 99)
 
-    def test_delitem(self):
+    def test_delitem(self) -> None:
         del self.wrapper[2]
         self.assertNotIn(3, self.wrapper)
 
-    def test_len(self):
+    def test_len(self) -> None:
         self.assertEqual(len(self.wrapper), 5)
 
-    def test_concat(self):
-        result = self.wrapper + [6, 7]
+    def test_concat(self) -> None:
+        result: object = self.wrapper + [6, 7]
         self.assertEqual(result, [1, 2, 3, 4, 5, 6, 7])
 
-    def test_repeat(self):
-        result = self.wrapper * 2
+    def test_repeat(self) -> None:
+        result: object = self.wrapper * 2
         self.assertEqual(result, [1, 2, 3, 4, 5, 1, 2, 3, 4, 5])
 
-    def test_contains(self):
+    def test_contains(self) -> None:
         self.assertTrue(3 in self.wrapper)
         self.assertFalse(6 in self.wrapper)
 
-    def test_iter(self):
-        items = [item for item in self.wrapper]
+    def test_iter(self) -> None:
+        items: list[object] = [item for item in self.wrapper]
         self.assertEqual(items, [1, 2, 3, 4, 5])
-        it = iter(self.wrapper)
+        it: Any = iter(self.wrapper)
         self.assertEqual(next(it), 1)
         self.assertEqual(next(it), 2)
         self.assertEqual(next(it), 3)
@@ -748,28 +756,28 @@ class TestLocalWrapperSequenceAPI(unittest.TestCase):
         with self.assertRaises(StopIteration):
             next(it)
 
-    def test_slice_get(self):
+    def test_slice_get(self) -> None:
         self.assertEqual(self.wrapper[1:3], [2, 3])
 
-    def test_slice_set(self):
+    def test_slice_set(self) -> None:
         self.wrapper[1:3] = [8, 9]
         self.assertEqual(self.wrapper[1], 8)
         self.assertEqual(self.wrapper[2], 9)
 
-    def test_slice_del(self):
+    def test_slice_del(self) -> None:
         del self.wrapper[1:3]
         self.assertEqual(list(self.wrapper), [1, 4, 5])
 
-    def test_error_on_non_sequence(self):
+    def test_error_on_non_sequence(self) -> None:
         with self.assertRaises(TypeError):
-            non_seq_wrapper = LocalWrapper(10)
+            non_seq_wrapper: LocalWrapper = LocalWrapper(10)
             non_seq_wrapper[0]
 
-    def test_error_on_out_of_bounds(self):
+    def test_error_on_out_of_bounds(self) -> None:
         with self.assertRaises(IndexError):
             _ = self.wrapper[10]
 
-    def test_error_on_wrong_type_index(self):
+    def test_error_on_wrong_type_index(self) -> None:
         with self.assertRaises(TypeError):
             _ = self.wrapper["a"]
 
@@ -777,28 +785,28 @@ class TestLocalWrapperSequenceAPI(unittest.TestCase):
 class WithSlots:
     __slots__ = ["a", "b"]
 
-    def __init__(self, a, b):
-        self.a = a
-        self.b = b
+    def __init__(self, a: object, b: object) -> None:
+        self.a: object = a
+        self.b: object = b
 
 
 class WithProperties:
-    def __init__(self, value):
-        self._value = value
+    def __init__(self, value: object) -> None:
+        self._value: object = value
 
     @property
-    def value(self):
+    def value(self) -> object:
         return self._value
 
     @value.setter
-    def value(self, new_value):
+    def value(self, new_value: object) -> None:
         self._value = new_value
 
 
 class TestLocalWrapperAttributes(unittest.TestCase):
-    def test_slots_get_set(self):
-        obj = WithSlots(1, 2)
-        wrapper = LocalWrapper(obj)
+    def test_slots_get_set(self) -> None:
+        obj: WithSlots = WithSlots(1, 2)
+        wrapper: LocalWrapper = LocalWrapper(obj)
         # Test getting attributes
         self.assertEqual(wrapper.a, 1)
         self.assertEqual(wrapper.b, 2)
@@ -808,93 +816,93 @@ class TestLocalWrapperAttributes(unittest.TestCase):
         self.assertEqual(wrapper.a, 10)
         self.assertEqual(wrapper.b, 20)
 
-    def test_properties_get_set(self):
-        obj = WithProperties(100)
-        wrapper = LocalWrapper(obj)
+    def test_properties_get_set(self) -> None:
+        obj: WithProperties = WithProperties(100)
+        wrapper: LocalWrapper = LocalWrapper(obj)
         # Test getting property
         self.assertEqual(wrapper.value, 100)
         # Test setting property
         wrapper.value = 200
         self.assertEqual(wrapper.value, 200)
 
-    def test_error_on_nonexistent_attribute(self):
-        obj = WithSlots(1, 2)
-        wrapper = LocalWrapper(obj)
+    def test_error_on_nonexistent_attribute(self) -> None:
+        obj: WithSlots = WithSlots(1, 2)
+        wrapper: LocalWrapper = LocalWrapper(obj)
         with self.assertRaises(AttributeError):
             _ = wrapper.nonexistent
 
-    def test_error_on_getting_nonexistent_attribute(self):
-        obj = WithProperties(100)
-        wrapper = LocalWrapper(obj)
+    def test_error_on_getting_nonexistent_attribute(self) -> None:
+        obj: WithProperties = WithProperties(100)
+        wrapper: LocalWrapper = LocalWrapper(obj)
         with self.assertRaises(AttributeError):
             wrapper.nonexistent
 
 
 class TestLocalWrapperCallables(unittest.TestCase):
-    def setUp(self):
-        def sample_function(x, y):
+    def setUp(self) -> None:
+        def sample_function(x: int, y: int) -> int:
             return x + y
 
         self.func = sample_function
-        self.wrapper = LocalWrapper(sample_function)
+        self.wrapper: LocalWrapper = LocalWrapper(sample_function)
 
-    def test_callable_invocation(self):
-        result = self.wrapper(10, 20)
-        expected = self.func(10, 20)
+    def test_callable_invocation(self) -> None:
+        result: object = self.wrapper(10, 20)
+        expected: int = self.func(10, 20)
         self.assertEqual(result, expected)
 
-    def test_error_on_non_callable(self):
-        non_callable = 123
-        non_callable_wrapper = LocalWrapper(non_callable)
+    def test_error_on_non_callable(self) -> None:
+        non_callable: int = 123
+        non_callable_wrapper: LocalWrapper = LocalWrapper(non_callable)
         with self.assertRaises(TypeError):
             non_callable_wrapper()
 
 
 class TestLocalWrapperCallableExceptions(unittest.TestCase):
-    def setUp(self):
-        def sample_function(x, y):
+    def setUp(self) -> None:
+        def sample_function(x: int, y: int) -> None:
             raise ValueError("Intentional error for testing.")
 
         self.func = sample_function
-        self.wrapper = LocalWrapper(sample_function)
+        self.wrapper: LocalWrapper = LocalWrapper(sample_function)
 
-    def test_callable_exception_propagation(self):
+    def test_callable_exception_propagation(self) -> None:
         with self.assertRaises(ValueError) as context:
             self.wrapper(10, 20)
         self.assertEqual(str(context.exception), "Intentional error for testing.")
 
-    def test_exception_stack_trace(self):
+    def test_exception_stack_trace(self) -> None:
         try:
             self.wrapper(10, 20)
-        except ValueError as e:
-            stack_trace = traceback.format_exc()
+        except ValueError:
+            stack_trace: str = traceback.format_exc()
             self.assertIn("sample_function", stack_trace)
             self.assertIn("test_exception_stack_trace", stack_trace)
 
 
 class TestLocalWrapperWithCoroutine(unittest.IsolatedAsyncioTestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         # Define a simple coroutine
-        async def sample_coroutine(x, y):
+        async def sample_coroutine(x: int, y: int) -> int:
             await asyncio.sleep(0.1)  # Simulate async operation
             return x + y
 
         self.coro = sample_coroutine
-        self.wrapper = LocalWrapper(sample_coroutine)
+        self.wrapper: LocalWrapper = LocalWrapper(sample_coroutine)
 
-    async def test_coroutine_invocation(self):
+    async def test_coroutine_invocation(self) -> None:
         # Test if the wrapped coroutine can be awaited and returns the correct result
-        result = await self.wrapper(10, 20)
-        expected = await self.coro(10, 20)
+        result: object = await self.wrapper(10, 20)
+        expected: int = await self.coro(10, 20)
         self.assertEqual(result, expected)
 
-    async def test_coroutine_exception_propagation(self):
+    async def test_coroutine_exception_propagation(self) -> None:
         # Define a coroutine that raises an exception
-        async def error_coroutine():
+        async def error_coroutine() -> None:
             await asyncio.sleep(0.1)
             raise ValueError("Intentional error for testing.")
 
-        error_wrapper = LocalWrapper(error_coroutine)
+        error_wrapper: LocalWrapper = LocalWrapper(error_coroutine)
 
         # Test if the exception raised by the wrapped coroutine is propagated
         with self.assertRaises(ValueError) as context:
@@ -903,19 +911,24 @@ class TestLocalWrapperWithCoroutine(unittest.IsolatedAsyncioTestCase):
 
 
 class ContextBase:
-    def __init__(self):
-        self.enter_called = False
-        self.exit_called = False
+    def __init__(self) -> None:
+        self.enter_called: bool = False
+        self.exit_called: bool = False
 
 
 class MissingExitContextManager(ContextBase):
-    def __enter__(self):
+    def __enter__(self) -> str:
         self.enter_called = True
         return "enter_value"
 
 
 class MissingEnterContextManager(ContextBase):
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: types.TracebackType | None,
+    ) -> bool:
         self.exit_called = True
         return False  # Do not suppress exceptions
 
@@ -925,19 +938,24 @@ class SimpleContextManager(MissingEnterContextManager, MissingExitContextManager
 
 
 class RaisingContextManager:
-    def __init__(self, raise_exit=False, raise_enter=False):
-        self.raise_exit = raise_exit
-        self.raise_enter = raise_enter
-        self.enter_called = False
-        self.exit_called = False
+    def __init__(self, raise_exit: bool = False, raise_enter: bool = False) -> None:
+        self.raise_exit: bool = raise_exit
+        self.raise_enter: bool = raise_enter
+        self.enter_called: bool = False
+        self.exit_called: bool = False
 
-    def __enter__(self):
+    def __enter__(self) -> str:
         self.enter_called = True
         if self.raise_enter:
             raise ValueError("Enter")
         return "enter_value"
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: types.TracebackType | None,
+    ) -> bool:
         self.exit_called = True
         if self.raise_exit:
             raise ValueError("Exit")
@@ -945,19 +963,19 @@ class RaisingContextManager:
 
 
 class TestLocalWrapperContext(unittest.TestCase):
-    def test_context_manager(self):
-        simple_cm = SimpleContextManager()
-        local_wrapper = LocalWrapper(simple_cm)
+    def test_context_manager(self) -> None:
+        simple_cm: SimpleContextManager = SimpleContextManager()
+        local_wrapper: LocalWrapper = LocalWrapper(simple_cm)
         with local_wrapper as value:
             self.assertEqual(value, "enter_value")
             self.assertTrue(simple_cm.enter_called)
         self.assertTrue(simple_cm.exit_called)
 
-    def test_missing_exit(self):
-        ctx_mgr = MissingExitContextManager()
-        local_wrapper = LocalWrapper(ctx_mgr)
+    def test_missing_exit(self) -> None:
+        ctx_mgr: MissingExitContextManager = MissingExitContextManager()
+        local_wrapper: LocalWrapper = LocalWrapper(ctx_mgr)
 
-        def checker():
+        def checker() -> None:
             with local_wrapper as value:
                 self.assertEqual(value, "enter_value")
 
@@ -965,11 +983,11 @@ class TestLocalWrapperContext(unittest.TestCase):
             checker()
         self.assertTrue(ctx_mgr.enter_called)
 
-    def test_missing_enter(self):
-        ctx_mgr = MissingEnterContextManager()
-        local_wrapper = LocalWrapper(ctx_mgr)
+    def test_missing_enter(self) -> None:
+        ctx_mgr: MissingEnterContextManager = MissingEnterContextManager()
+        local_wrapper: LocalWrapper = LocalWrapper(ctx_mgr)
 
-        def checker():
+        def checker() -> None:
             with local_wrapper as value:
                 pass
 
@@ -977,11 +995,11 @@ class TestLocalWrapperContext(unittest.TestCase):
             checker()
         self.assertFalse(ctx_mgr.exit_called)
 
-    def test_enter_raising(self):
-        ctx_mgr = RaisingContextManager(raise_enter=True)
-        local_wrapper = LocalWrapper(ctx_mgr)
+    def test_enter_raising(self) -> None:
+        ctx_mgr: RaisingContextManager = RaisingContextManager(raise_enter=True)
+        local_wrapper: LocalWrapper = LocalWrapper(ctx_mgr)
 
-        def checker():
+        def checker() -> None:
             with local_wrapper as value:
                 pass
 
@@ -990,11 +1008,11 @@ class TestLocalWrapperContext(unittest.TestCase):
         self.assertTrue(ctx_mgr.enter_called)
         self.assertFalse(ctx_mgr.exit_called)
 
-    def test_exit_raising(self):
-        ctx_mgr = RaisingContextManager(raise_exit=True)
-        local_wrapper = LocalWrapper(ctx_mgr)
+    def test_exit_raising(self) -> None:
+        ctx_mgr: RaisingContextManager = RaisingContextManager(raise_exit=True)
+        local_wrapper: LocalWrapper = LocalWrapper(ctx_mgr)
 
-        def checker():
+        def checker() -> None:
             with local_wrapper as value:
                 pass
 
@@ -1003,11 +1021,11 @@ class TestLocalWrapperContext(unittest.TestCase):
         self.assertTrue(ctx_mgr.enter_called)
         self.assertTrue(ctx_mgr.exit_called)
 
-    def test_raise_body(self):
-        ctx_mgr = SimpleContextManager()
-        local_wrapper = LocalWrapper(ctx_mgr)
+    def test_raise_body(self) -> None:
+        ctx_mgr: SimpleContextManager = SimpleContextManager()
+        local_wrapper: LocalWrapper = LocalWrapper(ctx_mgr)
 
-        def checker():
+        def checker() -> None:
             with local_wrapper as value:
                 raise ValueError("Body")
 

@@ -1,6 +1,6 @@
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 
-# pyre-unsafe
+# pyre-strict
 
 import gc
 import queue
@@ -8,14 +8,15 @@ import threading
 import time
 import unittest
 import weakref
+from typing import Callable
 
 import ft_utils.concurrency as concurrency
 import ft_utils.local as local
 
 
 class TestConcurrentDict(unittest.TestCase):
-    def test_smoke(self):
-        dct = concurrency.ConcurrentDict()
+    def test_smoke(self) -> None:
+        dct: concurrency.ConcurrentDict[int, int] = concurrency.ConcurrentDict()
         dct[1] = 2
         self.assertEqual(dct[1], 2)
         self.assertTrue(1 in dct)
@@ -25,8 +26,8 @@ class TestConcurrentDict(unittest.TestCase):
         with self.assertRaisesRegex(KeyError, "1"):
             del dct[1]
 
-    def test_big(self):
-        dct = concurrency.ConcurrentDict()
+    def test_big(self) -> None:
+        dct: concurrency.ConcurrentDict[object, object] = concurrency.ConcurrentDict()
         for i in range(10000):
             dct[i] = i + 1
         for i in range(10000):
@@ -36,26 +37,26 @@ class TestConcurrentDict(unittest.TestCase):
         for i in range(10000):
             self.assertEqual(dct[str(i)], str(i * 2))
 
-    def test_threads(self):
-        dct = concurrency.ConcurrentDict(37)
-        lck = threading.Lock()
+    def test_threads(self) -> None:
+        dct: concurrency.ConcurrentDict[object, object] = concurrency.ConcurrentDict(37)
+        lck: threading.Lock = threading.Lock()
 
-        def win():
+        def win() -> None:
             for i in range(1000):
                 dct[i] = i + 1
 
-        def wstr():
+        def wstr() -> None:
             for i in range(1000):
                 dct[str(i)] = str(i * 2)
 
-        def wdel():
+        def wdel() -> None:
             with lck:
                 for i in range(1000):
                     dct[str(-(i + 1))] = str(i * 2)
                 for i in range(1000):
                     del dct[str(-(i + 1))]
 
-        threads = [
+        threads: list[threading.Thread] = [
             threading.Thread(target=win),
             threading.Thread(target=wstr),
             threading.Thread(target=wdel),
@@ -76,18 +77,18 @@ class TestConcurrentDict(unittest.TestCase):
         with self.assertRaisesRegex(KeyError, "-10"):
             del dct["-10"]
 
-    def test_dundar(self):
+    def test_dundar(self) -> None:
         class Hasher:
-            def __init__(self, value):
-                self._value = value
+            def __init__(self, value: int | None) -> None:
+                self._value: int | None = value
 
-            def __hash__(self):
+            def __hash__(self) -> int:
                 if self._value is None:
                     raise RuntimeError("Invalid Hasher")
                 return self._value
 
-        dct = concurrency.ConcurrentDict()
-        illegal = Hasher(None)
+        dct: concurrency.ConcurrentDict[object, object] = concurrency.ConcurrentDict()
+        illegal: Hasher = Hasher(None)
 
         with self.assertRaisesRegex(RuntimeError, "Invalid Hasher"):
             dct[illegal]
@@ -101,69 +102,69 @@ class TestConcurrentDict(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "Invalid Hasher"):
             del dct[illegal]
 
-        legal = Hasher(-1)
+        legal: Hasher = Hasher(-1)
         dct[legal] = "dog"
         self.assertTrue(legal in dct)
         self.assertEqual(dct[legal], "dog")
         del dct[legal]
         self.assertFalse(legal in dct)
 
-    def test_as_dict(self):
-        cdct = concurrency.ConcurrentDict()
+    def test_as_dict(self) -> None:
+        cdct: concurrency.ConcurrentDict[int, int] = concurrency.ConcurrentDict()
         for i in range(1024):
             cdct[i] = -i
-        dct = cdct.as_dict()
+        dct: dict[int, int] = cdct.as_dict()
         self.assertIs(type(dct), dict)
         for i in range(1024):
             self.assertEqual(dct[i], -i)
 
-    def test_len(self):
-        dct = concurrency.ConcurrentDict()
-        self.assertEqual(len(dct), 0)
+    def test_len(self) -> None:
+        dct: concurrency.ConcurrentDict[int, str] = concurrency.ConcurrentDict()
+        self.assertEqual(len(dct), 0)  # pyre-ignore[6]
         dct[1] = "a"
-        self.assertEqual(len(dct), 1)
+        self.assertEqual(len(dct), 1)  # pyre-ignore[6]
         dct[2] = "b"
         dct[3] = "c"
-        self.assertEqual(len(dct), 3)
-        del dct[2]
-        self.assertEqual(len(dct), 2)
+        self.assertEqual(len(dct), 3)  # pyre-ignore[6]
+        del dct[2]  # pyre-ignore[6]
+        self.assertEqual(len(dct), 2)  # pyre-ignore[6]
 
 
 class TestConcurrentDictGC(unittest.TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         gc.collect()
 
-    def test_simple_gc_weakref(self):
-        d = concurrency.ConcurrentDict()
+    def test_simple_gc_weakref(self) -> None:
+        d: concurrency.ConcurrentDict[str, str] = concurrency.ConcurrentDict()
         d["key"] = "value"
-        ref = weakref.ref(d)
+        ref: weakref.ref[concurrency.ConcurrentDict[str, str]] = weakref.ref(d)
         del d
         gc.collect()
         self.assertIsNone(ref())
 
-    def test_cyclic_gc_weakref(self):
-        d1 = concurrency.ConcurrentDict()
-        d2 = concurrency.ConcurrentDict()
+    def test_cyclic_gc_weakref(self) -> None:
+        d1: concurrency.ConcurrentDict[str, object] = concurrency.ConcurrentDict()
+        d2: concurrency.ConcurrentDict[str, object] = concurrency.ConcurrentDict()
         d1["d2"] = d2
         d2["d1"] = d1
-        ref1 = weakref.ref(d1)
-        ref2 = weakref.ref(d2)
+        ref1: weakref.ref[concurrency.ConcurrentDict[str, object]] = weakref.ref(d1)
+        ref2: weakref.ref[concurrency.ConcurrentDict[str, object]] = weakref.ref(d2)
         del d1
         del d2
         gc.collect()
         self.assertIsNone(ref1())
         self.assertIsNone(ref2())
 
-    def test_nested_cyclic_gc_weakref(self):
-        d1 = concurrency.ConcurrentDict()
-        d2 = concurrency.ConcurrentDict()
-        d3 = concurrency.ConcurrentDict()
+    def test_nested_cyclic_gc_weakref(self) -> None:
+        d1: concurrency.ConcurrentDict[str, object] = concurrency.ConcurrentDict()
+        d2: concurrency.ConcurrentDict[str, object] = concurrency.ConcurrentDict()
+        d3: concurrency.ConcurrentDict[str, object] = concurrency.ConcurrentDict()
         d1["d2"] = d2
         d2["d3"] = d3
         d3["d1"] = d1
-        ref1 = weakref.ref(d1)
-        ref2 = weakref.ref(d2)
-        ref3 = weakref.ref(d3)
+        ref1: weakref.ref[concurrency.ConcurrentDict[str, object]] = weakref.ref(d1)
+        ref2: weakref.ref[concurrency.ConcurrentDict[str, object]] = weakref.ref(d2)
+        ref3: weakref.ref[concurrency.ConcurrentDict[str, object]] = weakref.ref(d3)
         del d1
         del d2
         del d3
@@ -172,16 +173,16 @@ class TestConcurrentDictGC(unittest.TestCase):
         self.assertIsNone(ref2())
         self.assertIsNone(ref3())
 
-    def test_self_referential_gc_weakref(self):
-        d = concurrency.ConcurrentDict()
+    def test_self_referential_gc_weakref(self) -> None:
+        d: concurrency.ConcurrentDict[str, object] = concurrency.ConcurrentDict()
         d["self"] = d
-        ref = weakref.ref(d)
+        ref: weakref.ref[concurrency.ConcurrentDict[str, object]] = weakref.ref(d)
         del d
         gc.collect()
         self.assertIsNone(ref())
 
-    def test_gc_garbage_list(self):
-        d = concurrency.ConcurrentDict()
+    def test_gc_garbage_list(self) -> None:
+        d: concurrency.ConcurrentDict[str, object] = concurrency.ConcurrentDict()
         del d
         gc.collect()
         self.assertTrue(gc.garbage == [])
@@ -190,8 +191,8 @@ class TestConcurrentDictGC(unittest.TestCase):
         del d
         gc.collect()
         self.assertTrue(gc.garbage == [])
-        d1 = concurrency.ConcurrentDict()
-        d2 = concurrency.ConcurrentDict()
+        d1: concurrency.ConcurrentDict[str, object] = concurrency.ConcurrentDict()
+        d2: concurrency.ConcurrentDict[str, object] = concurrency.ConcurrentDict()
         d1["d2"] = d2
         d2["d1"] = d1
         del d1
@@ -206,259 +207,265 @@ class TestConcurrentDictGC(unittest.TestCase):
 
 
 class TestAtomicInt64(unittest.TestCase):
-    def test_smoke(self):
-        ai = concurrency.AtomicInt64()
+    def test_smoke(self) -> None:
+        ai: concurrency.AtomicInt64 = concurrency.AtomicInt64()
         self.assertEqual(ai.get(), 0)
         ai.set(10)
         self.assertEqual(ai.get(), 10)
 
-    def test_add(self):
-        ai = concurrency.AtomicInt64(10)
+    def test_add(self) -> None:
+        ai: concurrency.AtomicInt64 = concurrency.AtomicInt64(10)
         self.assertEqual(ai + 10, 20)
 
-    def test_sub(self):
-        ai = concurrency.AtomicInt64(10)
+    def test_sub(self) -> None:
+        ai: concurrency.AtomicInt64 = concurrency.AtomicInt64(10)
         self.assertEqual(ai - 5, 5)
 
-    def test_mul(self):
-        ai = concurrency.AtomicInt64(10)
+    def test_mul(self) -> None:
+        ai: concurrency.AtomicInt64 = concurrency.AtomicInt64(10)
         self.assertEqual(ai * 5, 50)
 
-    def test_div(self):
-        ai = concurrency.AtomicInt64(10)
+    def test_div(self) -> None:
+        ai: concurrency.AtomicInt64 = concurrency.AtomicInt64(10)
         self.assertEqual(ai // 2, 5)
 
-    def test_iadd(self):
-        ai = concurrency.AtomicInt64(10)
+    def test_iadd(self) -> None:
+        ai: concurrency.AtomicInt64 = concurrency.AtomicInt64(10)
         ai += 10
         self.assertEqual(ai.get(), 20)
 
-    def test_isub(self):
-        ai = concurrency.AtomicInt64(10)
+    def test_isub(self) -> None:
+        ai: concurrency.AtomicInt64 = concurrency.AtomicInt64(10)
         ai -= 5
         self.assertEqual(ai.get(), 5)
 
-    def test_imul(self):
-        ai = concurrency.AtomicInt64(10)
+    def test_imul(self) -> None:
+        ai: concurrency.AtomicInt64 = concurrency.AtomicInt64(10)
         ai *= 5
         self.assertEqual(ai.get(), 50)
 
-    def test_idiv(self):
-        ai = concurrency.AtomicInt64(10)
+    def test_idiv(self) -> None:
+        ai: concurrency.AtomicInt64 = concurrency.AtomicInt64(10)
         ai //= 2
         self.assertEqual(ai.get(), 5)
 
-    def test_bool(self):
-        ai = concurrency.AtomicInt64(0)
+    def test_bool(self) -> None:
+        ai: concurrency.AtomicInt64 = concurrency.AtomicInt64(0)
         self.assertFalse(ai)
         ai.set(10)
         self.assertTrue(ai)
 
-    def test_or(self):
-        ai = concurrency.AtomicInt64(10)
+    def test_or(self) -> None:
+        ai: concurrency.AtomicInt64 = concurrency.AtomicInt64(10)
         self.assertEqual(ai | 5, 15)
 
-    def test_xor(self):
-        ai = concurrency.AtomicInt64(10)
+    def test_xor(self) -> None:
+        ai: concurrency.AtomicInt64 = concurrency.AtomicInt64(10)
         self.assertEqual(ai ^ 5, 15)
 
-    def test_and(self):
-        ai = concurrency.AtomicInt64(10)
+    def test_and(self) -> None:
+        ai: concurrency.AtomicInt64 = concurrency.AtomicInt64(10)
         self.assertEqual(ai & 5, 0)
 
-    def test_ior(self):
-        ai = concurrency.AtomicInt64(10)
+    def test_ior(self) -> None:
+        ai: concurrency.AtomicInt64 = concurrency.AtomicInt64(10)
         ai |= 5
         self.assertEqual(ai, 15)
 
-    def test_ixor(self):
-        ai = concurrency.AtomicInt64(10)
+    def test_ixor(self) -> None:
+        ai: concurrency.AtomicInt64 = concurrency.AtomicInt64(10)
         ai ^= 5
         self.assertEqual(ai, 15)
 
-    def test_iand(self):
-        ai = concurrency.AtomicInt64(10)
+    def test_iand(self) -> None:
+        ai: concurrency.AtomicInt64 = concurrency.AtomicInt64(10)
         ai &= 5
         self.assertEqual(ai, 0)
 
-    def test_not(self):
-        ai = concurrency.AtomicInt64(10)
+    def test_not(self) -> None:
+        ai: concurrency.AtomicInt64 = concurrency.AtomicInt64(10)
         self.assertEqual(~ai, -11)
 
-    def test_incr(self):
-        ai = concurrency.AtomicInt64(10)
+    def test_incr(self) -> None:
+        ai: concurrency.AtomicInt64 = concurrency.AtomicInt64(10)
         self.assertEqual(ai.incr(), 11)
 
-    def test_decr(self):
-        ai = concurrency.AtomicInt64(10)
+    def test_decr(self) -> None:
+        ai: concurrency.AtomicInt64 = concurrency.AtomicInt64(10)
         self.assertEqual(ai.decr(), 9)
 
-    def test_compare(self):
-        ai = concurrency.AtomicInt64()
+    def test_compare(self) -> None:
+        ai: concurrency.AtomicInt64 = concurrency.AtomicInt64()
         self.assertGreater(1, ai)
         self.assertLess(-1, ai)
         self.assertEqual(0, ai)
         self.assertTrue(concurrency.AtomicInt64(2) > 1)
 
-    def test_threads(self):
-        ai = concurrency.AtomicInt64(0)
+    def test_threads(self) -> None:
+        ai: concurrency.AtomicInt64 = concurrency.AtomicInt64(0)
 
-        def worker(n):
+        def worker(n: int) -> None:
             for _ in range(n):
                 ai.incr()
 
-        threads = [threading.Thread(target=worker, args=(1000,)) for _ in range(10)]
+        threads: list[threading.Thread] = [
+            threading.Thread(target=worker, args=(1000,)) for _ in range(10)
+        ]
         for t in threads:
             t.start()
         for t in threads:
             t.join()
         self.assertEqual(ai.get(), 10000)
 
-    def test_threads_set(self):
-        ai = concurrency.AtomicInt64(0)
+    def test_threads_set(self) -> None:
+        ai: concurrency.AtomicInt64 = concurrency.AtomicInt64(0)
 
-        def worker(n):
+        def worker(n: int) -> None:
             ai.set(n)
 
-        threads = [threading.Thread(target=worker, args=(10,)) for _ in range(10)]
+        threads: list[threading.Thread] = [
+            threading.Thread(target=worker, args=(10,)) for _ in range(10)
+        ]
         for t in threads:
             t.start()
         for t in threads:
             t.join()
         self.assertEqual(ai.get(), 10)
 
-    def test_format(self):
-        ai = concurrency.AtomicInt64(10)
+    def test_format(self) -> None:
+        ai: concurrency.AtomicInt64 = concurrency.AtomicInt64(10)
         self.assertEqual(f"{ai:x}", "a")
         self.assertEqual(f"{ai:b}", "1010")
         self.assertEqual(f"{ai:o}", "12")
         self.assertEqual(f"{ai:d}", "10")
 
 
-class BreakingDict(dict):
-    def __setitem__(self, key, value):
+class BreakingDict(dict[object, object]):
+    def __setitem__(self, key: object, value: object) -> None:
         raise RuntimeError("Cannot assign to this dictionary")
 
-    def __contains__(self, key):
+    def __contains__(self, key: object) -> bool:  # pyre-ignore[14]
         return key in self
 
 
 class TestConcurrentQueue(unittest.TestCase):
-    def _get_queue(self):
+    def _get_queue(self) -> concurrency.ConcurrentQueue:
         return concurrency.ConcurrentQueue()
 
-    def test_smoke(self):
-        q = self._get_queue()
+    def test_smoke(self) -> None:
+        q: concurrency.ConcurrentQueue = self._get_queue()
         q.push(10)
         self.assertEqual(q.pop(), 10)
 
-    def test_multiple_push(self):
-        q = self._get_queue()
+    def test_multiple_push(self) -> None:
+        q: concurrency.ConcurrentQueue = self._get_queue()
         for i in range(10):
             q.push(i)
         for i in range(10):
             self.assertEqual(q.pop(), i)
 
-    def test_multiple_threads(self):
-        q = self._get_queue()
+    def test_multiple_threads(self) -> None:
+        q: concurrency.ConcurrentQueue = self._get_queue()
 
-        def worker(n):
+        def worker(n: int) -> None:
             for i in range(n):
                 q.push(i)
 
-        threads = [threading.Thread(target=worker, args=(10,)) for _ in range(10)]
+        threads: list[threading.Thread] = [
+            threading.Thread(target=worker, args=(10,)) for _ in range(10)
+        ]
         for t in threads:
             t.start()
         for t in threads:
             t.join()
         for _ in range(100):
-            x = q.pop()
+            x: object = q.pop()
             self.assertIn(x, list(range(10)))
 
-    def test_pop_timeout(self):
-        q = self._get_queue()
+    def test_pop_timeout(self) -> None:
+        q: concurrency.ConcurrentQueue = self._get_queue()
 
-        def worker():
+        def worker() -> None:
             q.push(10)
 
-        t = threading.Thread(target=worker)
+        t: threading.Thread = threading.Thread(target=worker)
         t.start()
         self.assertEqual(q.pop(), 10)
         t.join()
 
-    def test_queue_failure(self):
-        q = self._get_queue()
+    def test_queue_failure(self) -> None:
+        q: concurrency.ConcurrentQueue = self._get_queue()
 
-        def worker():
-            q._dict = BreakingDict()
+        def worker() -> None:
+            q._dict = BreakingDict()  # pyre-ignore[8]
             try:
                 q.push(None)
             except Exception:
                 pass
 
-        t = threading.Thread(target=worker)
+        t: threading.Thread = threading.Thread(target=worker)
         t.start()
         t.join()
         with self.assertRaises(RuntimeError):
             q.pop()
 
-    def test_pop_local(self):
-        q = self._get_queue()
+    def test_pop_local(self) -> None:
+        q: concurrency.ConcurrentQueue = self._get_queue()
         q.push(10)
-        wrapper = q.pop_local()
+        wrapper: local.LocalWrapper = q.pop_local()
         self.assertEqual(wrapper, 10)
         self.assertEqual(type(wrapper), local.LocalWrapper)
 
-    def test_empty_queue(self):
-        q = self._get_queue()
+    def test_empty_queue(self) -> None:
+        q: concurrency.ConcurrentQueue = self._get_queue()
 
-        def worker():
+        def worker() -> None:
             time.sleep(0.1)
             q.push(10)
 
         for _ in range(5):
-            t = threading.Thread(target=worker)
+            t: threading.Thread = threading.Thread(target=worker)
             t.start()
             self.assertEqual(q.pop(), 10)
 
-    def test_pop(self):
-        q = self._get_queue()
+    def test_pop(self) -> None:
+        q: concurrency.ConcurrentQueue = self._get_queue()
 
-        def worker():
+        def worker() -> None:
             time.sleep(0.1)
             q.push(10)
 
-        t = threading.Thread(target=worker)
+        t: threading.Thread = threading.Thread(target=worker)
         t.start()
         self.assertEqual(q.pop(), 10)
         t.join()
 
-    def test_pop_timeout_sleep(self):
-        q = self._get_queue()
-        f = concurrency.AtomicFlag(False)
+    def test_pop_timeout_sleep(self) -> None:
+        q: concurrency.ConcurrentQueue = self._get_queue()
+        f: concurrency.AtomicFlag = concurrency.AtomicFlag(False)
 
-        def worker():
+        def worker() -> None:
             f.set(True)
             time.sleep(0.1)
             q.push(10)
 
-        t = threading.Thread(target=worker)
+        t: threading.Thread = threading.Thread(target=worker)
         t.start()
         while not f:
             pass
         self.assertEqual(q.pop(timeout=1), 10)
         t.join()
 
-    def test_pop_timeout_expires(self):
-        q = self._get_queue()
-        f = concurrency.AtomicFlag(False)
+    def test_pop_timeout_expires(self) -> None:
+        q: concurrency.ConcurrentQueue = self._get_queue()
+        f: concurrency.AtomicFlag = concurrency.AtomicFlag(False)
 
-        def worker():
+        def worker() -> None:
             f.set(True)
             time.sleep(0.5)
             q.push(10)
 
-        t = threading.Thread(target=worker)
+        t: threading.Thread = threading.Thread(target=worker)
         t.start()
         while not f:
             pass
@@ -466,20 +473,20 @@ class TestConcurrentQueue(unittest.TestCase):
             q.pop(timeout=0.1)
         t.join()
 
-    def test_pop_waiting(self):
-        q = self._get_queue()
+    def test_pop_waiting(self) -> None:
+        q: concurrency.ConcurrentQueue = self._get_queue()
 
-        def worker():
+        def worker() -> None:
             time.sleep(0.1)
             q.push(10)
 
-        t = threading.Thread(target=worker)
+        t: threading.Thread = threading.Thread(target=worker)
         t.start()
         self.assertEqual(q.pop(), 10)
         t.join()
 
-    def test_shutdown(self):
-        q = self._get_queue()
+    def test_shutdown(self) -> None:
+        q: concurrency.ConcurrentQueue = self._get_queue()
         q.push(10)
         q.shutdown()
         with self.assertRaises(concurrency.ShutDown):
@@ -488,8 +495,8 @@ class TestConcurrentQueue(unittest.TestCase):
         with self.assertRaises(concurrency.ShutDown):
             q.pop()
 
-    def test_shutdown_immediate(self):
-        q = self._get_queue()
+    def test_shutdown_immediate(self) -> None:
+        q: concurrency.ConcurrentQueue = self._get_queue()
         q.push(10)
         q.shutdown(immediate=True)
         with self.assertRaises(concurrency.ShutDown):
@@ -497,21 +504,21 @@ class TestConcurrentQueue(unittest.TestCase):
         with self.assertRaises(concurrency.ShutDown):
             q.pop()
 
-    def test_shutdown_empty(self):
-        q = self._get_queue()
+    def test_shutdown_empty(self) -> None:
+        q: concurrency.ConcurrentQueue = self._get_queue()
 
-        def worker():
+        def worker() -> None:
             time.sleep(0.1)
             q.shutdown()
 
-        t = threading.Thread(target=worker)
+        t: threading.Thread = threading.Thread(target=worker)
         t.start()
         with self.assertRaises(concurrency.ShutDown):
             q.pop()
         t.join()
 
-    def test_size_empty(self):
-        q = self._get_queue()
+    def test_size_empty(self) -> None:
+        q: concurrency.ConcurrentQueue = self._get_queue()
         self.assertEqual(q.size(), 0)
         self.assertTrue(q.empty())
         q.push(35)
@@ -521,38 +528,40 @@ class TestConcurrentQueue(unittest.TestCase):
         self.assertEqual(q.size(), 0)
         self.assertTrue(q.empty())
 
-    def test_timeout_placeholdr(self):
-        q = self._get_queue()
-        t0 = time.monotonic()
+    def test_timeout_placeholdr(self) -> None:
+        q: concurrency.ConcurrentQueue = self._get_queue()
+        t0: float = time.monotonic()
         with self.assertRaises(queue.Empty):
             q.pop(timeout=0.1)
-        t1 = time.monotonic()
+        t1: float = time.monotonic()
         self.assertGreater(t1 - t0, 0.1)
         self.assertEqual(q.size(), 0)
         q.push(35)
         self.assertEqual(q.size(), 1)
         self.assertEqual(q.pop(), 35)
 
-    def test_timeout_many(self):
-        q = self._get_queue()
-        p_count = concurrency.AtomicInt64()
-        p_vals = concurrency.ConcurrentDict()
-        count = 128
-        nthread = 4
-        errors = []
+    def test_timeout_many(self) -> None:
+        q: concurrency.ConcurrentQueue = self._get_queue()
+        p_count: concurrency.AtomicInt64 = concurrency.AtomicInt64()
+        p_vals: concurrency.ConcurrentDict[int, object] = concurrency.ConcurrentDict()
+        count: int = 128
+        nthread: int = 4
+        errors: list[Exception] = []
 
-        def worker():
+        def worker() -> None:
             while p_count < count:
                 try:
-                    v = q.pop(timeout=0.01)
-                    k = p_count.incr()
+                    v: object = q.pop(timeout=0.01)
+                    k: int = p_count.incr()
                     p_vals[k - 1] = v
                 except Exception as e:
                     if type(e) is not concurrency.Empty:
                         errors.append(e)
                         break
 
-        threads = [threading.Thread(target=worker) for _ in range(nthread)]
+        threads: list[threading.Thread] = [
+            threading.Thread(target=worker) for _ in range(nthread)
+        ]
         for t in threads:
             t.start()
 
@@ -567,42 +576,44 @@ class TestConcurrentQueue(unittest.TestCase):
 
         self.assertEqual(errors, [])
         self.assertEqual(int(p_count), count)
-        s1 = set(range(count))
-        s2 = {p_vals[v] for v in range(count)}
+        s1: set[int] = set(range(count))
+        s2: set[object] = {p_vals[v] for v in range(count)}
         self.assertEqual(s1, s2)
 
 
 class TestConcurrentQueueLockFree(TestConcurrentQueue):
-    def _get_queue(self):
+    def _get_queue(self) -> concurrency.ConcurrentQueue:
         return concurrency.ConcurrentQueue(lock_free=True)
 
 
 class TestStdConcurrentQueue(unittest.TestCase):
-    def _get_queue(self, maxsize=0):
+    def _get_queue(self, maxsize: int = 0) -> concurrency.StdConcurrentQueue:
         return concurrency.StdConcurrentQueue(maxsize)
 
-    def test_smoke(self):
-        q = self._get_queue()
+    def test_smoke(self) -> None:
+        q: concurrency.StdConcurrentQueue = self._get_queue()
         q.put(10)
         self.assertEqual(q.get(), 10)
 
-    def test_multiple_put(self):
-        q = self._get_queue()
+    def test_multiple_put(self) -> None:
+        q: concurrency.StdConcurrentQueue = self._get_queue()
         for i in range(10):
             q.put(i)
         for i in range(10):
             self.assertEqual(q.get(), i)
 
-    def test_multiple_threads(self):
-        q = self._get_queue()
-        flag = concurrency.AtomicFlag(False)
+    def test_multiple_threads(self) -> None:
+        q: concurrency.StdConcurrentQueue = self._get_queue()
+        flag: concurrency.AtomicFlag = concurrency.AtomicFlag(False)
 
-        def worker(n):
+        def worker(n: int) -> None:
             flag.set(True)
             for i in range(n):
                 q.put(i)
 
-        threads = [threading.Thread(target=worker, args=(10,)) for _ in range(10)]
+        threads: list[threading.Thread] = [
+            threading.Thread(target=worker, args=(10,)) for _ in range(10)
+        ]
         for t in threads:
             t.start()
         while not flag:
@@ -610,35 +621,35 @@ class TestStdConcurrentQueue(unittest.TestCase):
         for t in threads:
             t.join()
         for _ in range(100):
-            x = q.get()
+            x: object = q.get()
             self.assertIn(x, list(range(10)))
 
-    def test_get_timeout(self):
-        q = self._get_queue()
-        flag = concurrency.AtomicFlag(False)
+    def test_get_timeout(self) -> None:
+        q: concurrency.StdConcurrentQueue = self._get_queue()
+        flag: concurrency.AtomicFlag = concurrency.AtomicFlag(False)
 
-        def worker():
+        def worker() -> None:
             flag.set(True)
             time.sleep(0.1)
             q.put(10)
 
-        t = threading.Thread(target=worker)
+        t: threading.Thread = threading.Thread(target=worker)
         t.start()
         while not flag:
             pass
         self.assertEqual(q.get(timeout=1), 10)
         t.join()
 
-    def test_get_timeout_expires(self):
-        q = self._get_queue()
-        flag = concurrency.AtomicFlag(False)
+    def test_get_timeout_expires(self) -> None:
+        q: concurrency.StdConcurrentQueue = self._get_queue()
+        flag: concurrency.AtomicFlag = concurrency.AtomicFlag(False)
 
-        def worker():
+        def worker() -> None:
             flag.set(True)
             time.sleep(0.5)
             q.put(10)
 
-        t = threading.Thread(target=worker)
+        t: threading.Thread = threading.Thread(target=worker)
         t.start()
         while not flag:
             pass
@@ -646,99 +657,101 @@ class TestStdConcurrentQueue(unittest.TestCase):
             q.get(timeout=0.1)
         t.join()
 
-    def test_get_waiting(self):
-        q = self._get_queue()
-        flag = concurrency.AtomicFlag(False)
+    def test_get_waiting(self) -> None:
+        q: concurrency.StdConcurrentQueue = self._get_queue()
+        flag: concurrency.AtomicFlag = concurrency.AtomicFlag(False)
 
-        def worker():
+        def worker() -> None:
             flag.set(True)
             time.sleep(0.1)
             q.put(10)
 
-        t = threading.Thread(target=worker)
+        t: threading.Thread = threading.Thread(target=worker)
         t.start()
         while not flag:
             pass
         self.assertEqual(q.get(), 10)
         t.join()
 
-    def test_put_nowait(self):
-        q = self._get_queue(maxsize=1)
+    def test_put_nowait(self) -> None:
+        q: concurrency.StdConcurrentQueue = self._get_queue(maxsize=1)
         q.put_nowait(10)
         with self.assertRaises(queue.Full):
             q.put_nowait(20)
 
-    def test_get_nowait(self):
-        q = self._get_queue()
+    def test_get_nowait(self) -> None:
+        q: concurrency.StdConcurrentQueue = self._get_queue()
         q.put(10)
         self.assertEqual(q.get_nowait(), 10)
         with self.assertRaises(queue.Empty):
             q.get_nowait()
 
-    def test_empty_queue(self):
-        q = self._get_queue()
-        flag = concurrency.AtomicFlag(False)
+    def test_empty_queue(self) -> None:
+        q: concurrency.StdConcurrentQueue = self._get_queue()
+        flag: concurrency.AtomicFlag = concurrency.AtomicFlag(False)
 
-        def worker():
+        def worker() -> None:
             flag.set(True)
             time.sleep(0.1)
             q.put(10)
 
         for _ in range(5):
-            t = threading.Thread(target=worker)
+            t: threading.Thread = threading.Thread(target=worker)
             t.start()
             while not flag:
                 pass
             self.assertEqual(q.get(), 10)
 
-    def test_qsize(self):
-        q = self._get_queue()
+    def test_qsize(self) -> None:
+        q: concurrency.StdConcurrentQueue = self._get_queue()
         self.assertEqual(q.qsize(), 0)
         q.put(10)
         self.assertEqual(q.qsize(), 1)
         q.get()
         self.assertEqual(q.qsize(), 0)
 
-    def test_full(self):
-        q = self._get_queue(maxsize=1)
+    def test_full(self) -> None:
+        q: concurrency.StdConcurrentQueue = self._get_queue(maxsize=1)
         self.assertFalse(q.full())
         q.put(10)
         self.assertEqual(q.size(), 1)
         self.assertEqual(q._maxsize, 1)
         self.assertTrue(q.full())
 
-    def test_task_done(self):
-        q = self._get_queue()
+    def test_task_done(self) -> None:
+        q: concurrency.StdConcurrentQueue = self._get_queue()
         q.put(10)
         self.assertEqual(10, q.get())
         q.task_done()
         self.assertEqual(int(q._active_tasks), 0)
         q.join()
 
-    def test_join(self):
-        q = self._get_queue()
+    def test_join(self) -> None:
+        q: concurrency.StdConcurrentQueue = self._get_queue()
 
-        def worker():
+        def worker() -> None:
             q.get()
             q.task_done()
 
-        ts = [threading.Thread(target=worker) for _ in range(10)]
+        ts: list[threading.Thread] = [
+            threading.Thread(target=worker) for _ in range(10)
+        ]
         for t in ts:
             t.start()
             q.put(10)
         q.join()
-        t.join()
+        t.join()  # pyre-ignore[61]
         self.assertEqual(int(q._active_tasks), 0)
 
-    def test_full_shutdown(self):
-        q = self._get_queue(1)
+    def test_full_shutdown(self) -> None:
+        q: concurrency.StdConcurrentQueue = self._get_queue(1)
         q.put(23)
 
-        def worker():
+        def worker() -> None:
             q.shutdown()
             q.get()
 
-        t = threading.Thread(target=worker)
+        t: threading.Thread = threading.Thread(target=worker)
         t.start()
         with self.assertRaises(concurrency.ShutDown):
             q.put(32)
@@ -746,24 +759,38 @@ class TestStdConcurrentQueue(unittest.TestCase):
 
 class TestConcurrentDeque(unittest.TestCase):
     class RichComparisonFailure:
-        def rich_comparison_failure(self, other):
+        def rich_comparison_failure(self, other: object) -> bool:
             raise RuntimeError("failure")
 
-        __lt__ = rich_comparison_failure
-        __le__ = rich_comparison_failure
-        __eq__ = rich_comparison_failure
-        __ne__ = rich_comparison_failure
-        __gt__ = rich_comparison_failure
-        __ge__ = rich_comparison_failure
+        __lt__: Callable[
+            ["TestConcurrentDeque.RichComparisonFailure", object], bool
+        ] = rich_comparison_failure
+        __le__: Callable[
+            ["TestConcurrentDeque.RichComparisonFailure", object], bool
+        ] = rich_comparison_failure
+        # pyre-ignore[15]
+        __eq__: Callable[
+            ["TestConcurrentDeque.RichComparisonFailure", object], bool
+        ] = rich_comparison_failure
+        # pyre-ignore[15]
+        __ne__: Callable[
+            ["TestConcurrentDeque.RichComparisonFailure", object], bool
+        ] = rich_comparison_failure
+        __gt__: Callable[
+            ["TestConcurrentDeque.RichComparisonFailure", object], bool
+        ] = rich_comparison_failure
+        __ge__: Callable[
+            ["TestConcurrentDeque.RichComparisonFailure", object], bool
+        ] = rich_comparison_failure
 
-    def test_smoke(self):
-        d = concurrency.ConcurrentDeque[int]()
+    def test_smoke(self) -> None:
+        d: concurrency.ConcurrentDeque[int] = concurrency.ConcurrentDeque[int]()
         d.append(10)
 
         self.assertEqual(d.pop(), 10)
 
-    def test_appends(self):
-        d = concurrency.ConcurrentDeque[int]()
+    def test_appends(self) -> None:
+        d: concurrency.ConcurrentDeque[int] = concurrency.ConcurrentDeque[int]()
         for i in range(10):
             if i % 2 == 0:
                 d.appendleft(i)
@@ -776,14 +803,14 @@ class TestConcurrentDeque(unittest.TestCase):
             else:
                 self.assertEqual(d.pop(), i)
 
-    def test_appends_concurrency(self):
-        n_workers = 10
-        n_numbers = 100
+    def test_appends_concurrency(self) -> None:
+        n_workers: int = 10
+        n_numbers: int = 100
 
-        d = concurrency.ConcurrentDeque[int]()
-        b = threading.Barrier(n_workers, timeout=1)
+        d: concurrency.ConcurrentDeque[int] = concurrency.ConcurrentDeque[int]()
+        b: threading.Barrier = threading.Barrier(n_workers, timeout=1)
 
-        def worker():
+        def worker() -> None:
             b.wait()
             for i in range(n_numbers):
                 time.sleep(0.001)  # attempt to get interleaved appends
@@ -792,7 +819,9 @@ class TestConcurrentDeque(unittest.TestCase):
                 else:
                     d.append(i)
 
-        threads = [threading.Thread(target=worker) for _ in range(n_workers)]
+        threads: list[threading.Thread] = [
+            threading.Thread(target=worker) for _ in range(n_workers)
+        ]
 
         for t in threads:
             t.start()
@@ -805,40 +834,48 @@ class TestConcurrentDeque(unittest.TestCase):
             else:
                 self.assertIn(d.pop(), list(range(1, n_numbers, 2)))
 
-    def test_clear(self):
-        d = concurrency.ConcurrentDeque[int]([1, 2, 3, 4, 5])
+    def test_clear(self) -> None:
+        d: concurrency.ConcurrentDeque[int] = concurrency.ConcurrentDeque[int](
+            [1, 2, 3, 4, 5]
+        )
         d.clear()
 
         self.assertEqual(len(d), 0)
 
-    def test_contains(self):
-        d = concurrency.ConcurrentDeque[int]([1, 2, 3, 4, 5])
+    def test_contains(self) -> None:
+        d: concurrency.ConcurrentDeque[int] = concurrency.ConcurrentDeque[int](
+            [1, 2, 3, 4, 5]
+        )
         self.assertTrue(1 in d)
         self.assertFalse(0 in d)
 
-    def test_contains_failure(self):
-        d = concurrency.ConcurrentDeque([self.RichComparisonFailure()])
+    def test_contains_failure(self) -> None:
+        d: concurrency.ConcurrentDeque[object] = concurrency.ConcurrentDeque[object](
+            [self.RichComparisonFailure()]
+        )
         with self.assertRaises(RuntimeError):
             self.assertFalse(0 in d)
 
-    def test_extend(self):
-        d = concurrency.ConcurrentDeque[int]()
+    def test_extend(self) -> None:
+        d: concurrency.ConcurrentDeque[int] = concurrency.ConcurrentDeque[int]()
         d.extend([1, 2, 3])
         d.extend([4, 5])
 
         self.assertEqual(len(d), 5)
         self.assertEqual(d.pop(), 5)
 
-    def test_extendleft(self):
-        d = concurrency.ConcurrentDeque[int]()
+    def test_extendleft(self) -> None:
+        d: concurrency.ConcurrentDeque[int] = concurrency.ConcurrentDeque[int]()
         d.extendleft([5, 4])
         d.extendleft([3, 2, 1])
 
         self.assertEqual(len(d), 5)
         self.assertEqual(d.popleft(), 1)
 
-    def test_item(self):
-        d = concurrency.ConcurrentDeque[int]([1, 2, 3, 4, 5])
+    def test_item(self) -> None:
+        d: concurrency.ConcurrentDeque[int] = concurrency.ConcurrentDeque[int](
+            [1, 2, 3, 4, 5]
+        )
 
         self.assertEqual(d[0], 1)
         self.assertEqual(d[2], 3)
@@ -848,12 +885,16 @@ class TestConcurrentDeque(unittest.TestCase):
         with self.assertRaises(IndexError):
             d[5]
 
-    def test_iter(self):
-        d = concurrency.ConcurrentDeque[int]([1, 2, 3, 4, 5])
+    def test_iter(self) -> None:
+        d: concurrency.ConcurrentDeque[int] = concurrency.ConcurrentDeque[int](
+            [1, 2, 3, 4, 5]
+        )
         self.assertEqual(list(d), [1, 2, 3, 4, 5])
 
-    def test_remove(self):
-        d = concurrency.ConcurrentDeque[int]([1, 2, 3, 4, 5])
+    def test_remove(self) -> None:
+        d: concurrency.ConcurrentDeque[int] = concurrency.ConcurrentDeque[int](
+            [1, 2, 3, 4, 5]
+        )
         d.remove(1)
         self.assertEqual(d.popleft(), 2)
 
@@ -863,29 +904,33 @@ class TestConcurrentDeque(unittest.TestCase):
         with self.assertRaises(ValueError):
             d.remove(1)
 
-    def test_remove_failure(self):
-        d = concurrency.ConcurrentDeque([self.RichComparisonFailure()])
+    def test_remove_failure(self) -> None:
+        d: concurrency.ConcurrentDeque[object] = concurrency.ConcurrentDeque[object](
+            [self.RichComparisonFailure()]
+        )
         with self.assertRaises(RuntimeError):
             d.remove(1)
 
-    def test_rich_comparison(self):
-        d1 = concurrency.ConcurrentDeque[int]([])
-        d2 = concurrency.ConcurrentDeque[int]([])
+    def test_rich_comparison(self) -> None:
+        d1: concurrency.ConcurrentDeque[int] = concurrency.ConcurrentDeque[int]([])
+        d2: concurrency.ConcurrentDeque[int] = concurrency.ConcurrentDeque[int]([])
         self.assertEqual(d1, d2)  # [] == []
 
         d2.append(1)
-        self.assertLess(d1, d2)  # [] < [1]
+        self.assertLess(d1, d2)  # pyre-ignore[6] [] < [1]
         self.assertNotEqual(d1, d2)  # [] != [1]
 
         d1.extend([1, 2])
-        self.assertGreater(d1, d2)  # [1, 2] > [1]
+        self.assertGreater(d1, d2)  # pyre-ignore[6] [1, 2] > [1]
 
         d2.append(2)
-        self.assertLessEqual(d1, d2)  # [1, 2] <= [1, 2]
-        self.assertGreaterEqual(d1, d2)  # [1, 2] >= [1, 2]
+        self.assertLessEqual(d1, d2)  # pyre-ignore[6] [1, 2] <= [1, 2]
+        self.assertGreaterEqual(d1, d2)  # pyre-ignore[6] [1, 2] >= [1, 2]
 
-    def test_rotate(self):
-        d = concurrency.ConcurrentDeque[int]([1, 2, 3, 4, 5])
+    def test_rotate(self) -> None:
+        d: concurrency.ConcurrentDeque[int] = concurrency.ConcurrentDeque[int](
+            [1, 2, 3, 4, 5]
+        )
         d.rotate(1)
         self.assertEqual(d.pop(), 4)
 
@@ -899,28 +944,28 @@ class TestConcurrentDeque(unittest.TestCase):
 
 
 class TestConcurrentDequeGC(unittest.TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         gc.collect()
 
-    def test_simple_gc_weakref(self):
-        d = concurrency.ConcurrentDeque()
+    def test_simple_gc_weakref(self) -> None:
+        d: concurrency.ConcurrentDeque[str] = concurrency.ConcurrentDeque()
 
         d.append("value")
-        ref = weakref.ref(d)
+        ref: weakref.ref[concurrency.ConcurrentDeque[str]] = weakref.ref(d)
 
         del d
         gc.collect()
 
         self.assertIsNone(ref())
 
-    def test_cyclic_gc_weakref(self):
-        d1 = concurrency.ConcurrentDeque()
-        d2 = concurrency.ConcurrentDeque()
+    def test_cyclic_gc_weakref(self) -> None:
+        d1: concurrency.ConcurrentDeque[object] = concurrency.ConcurrentDeque()
+        d2: concurrency.ConcurrentDeque[object] = concurrency.ConcurrentDeque()
 
         d1.append(d2)
         d2.append(d1)
-        ref1 = weakref.ref(d1)
-        ref2 = weakref.ref(d2)
+        ref1: weakref.ref[concurrency.ConcurrentDeque[object]] = weakref.ref(d1)
+        ref2: weakref.ref[concurrency.ConcurrentDeque[object]] = weakref.ref(d2)
 
         del d1
         del d2
@@ -929,17 +974,17 @@ class TestConcurrentDequeGC(unittest.TestCase):
         self.assertIsNone(ref1())
         self.assertIsNone(ref2())
 
-    def test_nested_cyclic_gc_weakref(self):
-        d1 = concurrency.ConcurrentDeque()
-        d2 = concurrency.ConcurrentDeque()
-        d3 = concurrency.ConcurrentDeque()
+    def test_nested_cyclic_gc_weakref(self) -> None:
+        d1: concurrency.ConcurrentDeque[object] = concurrency.ConcurrentDeque()
+        d2: concurrency.ConcurrentDeque[object] = concurrency.ConcurrentDeque()
+        d3: concurrency.ConcurrentDeque[object] = concurrency.ConcurrentDeque()
 
         d1.append(d2)
         d2.append(d3)
         d3.append(d1)
-        ref1 = weakref.ref(d1)
-        ref2 = weakref.ref(d2)
-        ref3 = weakref.ref(d3)
+        ref1: weakref.ref[concurrency.ConcurrentDeque[object]] = weakref.ref(d1)
+        ref2: weakref.ref[concurrency.ConcurrentDeque[object]] = weakref.ref(d2)
+        ref3: weakref.ref[concurrency.ConcurrentDeque[object]] = weakref.ref(d3)
 
         del d1
         del d2
@@ -950,20 +995,20 @@ class TestConcurrentDequeGC(unittest.TestCase):
         self.assertIsNone(ref2())
         self.assertIsNone(ref3())
 
-    def test_self_referential_gc_weakref(self):
-        d = concurrency.ConcurrentDeque()
+    def test_self_referential_gc_weakref(self) -> None:
+        d: concurrency.ConcurrentDeque[object] = concurrency.ConcurrentDeque()
         d.append(d)
 
-        ref = weakref.ref(d)
+        ref: weakref.ref[concurrency.ConcurrentDeque[object]] = weakref.ref(d)
         del d
 
         gc.collect()
         self.assertIsNone(ref())
 
-    def test_gc_garbage_list(self):
+    def test_gc_garbage_list(self) -> None:
         self.assertTrue(gc.garbage == [])
 
-        d = concurrency.ConcurrentDeque()
+        d: concurrency.ConcurrentDeque[object] = concurrency.ConcurrentDeque()
         del d
         gc.collect()
         self.assertTrue(gc.garbage == [])
@@ -974,8 +1019,8 @@ class TestConcurrentDequeGC(unittest.TestCase):
         gc.collect()
         self.assertTrue(gc.garbage == [])
 
-        d1 = concurrency.ConcurrentDeque()
-        d2 = concurrency.ConcurrentDeque()
+        d1: concurrency.ConcurrentDeque[object] = concurrency.ConcurrentDeque()
+        d2: concurrency.ConcurrentDeque[object] = concurrency.ConcurrentDeque()
         d1.append(d2)
         d2.append(d1)
         del d1
@@ -992,10 +1037,10 @@ class TestConcurrentDequeGC(unittest.TestCase):
     class _TestObject:
         pass
 
-    def test_contains(self):
-        d = concurrency.ConcurrentDeque()
-        o = self._TestObject()
-        ref = weakref.ref(o)
+    def test_contains(self) -> None:
+        d: concurrency.ConcurrentDeque[object] = concurrency.ConcurrentDeque()
+        o: TestConcurrentDequeGC._TestObject = self._TestObject()
+        ref: weakref.ref[TestConcurrentDequeGC._TestObject] = weakref.ref(o)
 
         d.append(o)
         self.assertTrue(o in d)
@@ -1006,10 +1051,10 @@ class TestConcurrentDequeGC(unittest.TestCase):
 
         self.assertIsNone(ref())
 
-    def test_contains_cycle(self):
-        d1 = concurrency.ConcurrentDeque()
-        d2 = concurrency.ConcurrentDeque()
-        o = self._TestObject()
+    def test_contains_cycle(self) -> None:
+        d1: concurrency.ConcurrentDeque[object] = concurrency.ConcurrentDeque()
+        d2: concurrency.ConcurrentDeque[object] = concurrency.ConcurrentDeque()
+        o: TestConcurrentDequeGC._TestObject = self._TestObject()
 
         d1.append(o)
         d1.append(d2)
@@ -1017,8 +1062,8 @@ class TestConcurrentDequeGC(unittest.TestCase):
         d2.append(o)
         d2.append(d1)
 
-        ref1 = weakref.ref(d1)
-        ref2 = weakref.ref(d2)
+        ref1: weakref.ref[concurrency.ConcurrentDeque[object]] = weakref.ref(d1)
+        ref2: weakref.ref[concurrency.ConcurrentDeque[object]] = weakref.ref(d2)
 
         self.assertTrue(o in d1)
         self.assertTrue(d2 in d1)
@@ -1033,54 +1078,66 @@ class TestConcurrentDequeGC(unittest.TestCase):
         self.assertIsNone(ref1())
         self.assertIsNone(ref2())
 
-    def test_pop(self):
-        d = concurrency.ConcurrentDeque([self._TestObject()])
-        ref = weakref.ref(d[0])
+    def test_pop(self) -> None:
+        d: concurrency.ConcurrentDeque[object] = concurrency.ConcurrentDeque[object](
+            [self._TestObject()]
+        )
+        ref: weakref.ref[object] = weakref.ref(d[0])
 
         d.pop()
         gc.collect()
 
         self.assertIsNone(ref())
 
-    def test_popleft(self):
-        d = concurrency.ConcurrentDeque([self._TestObject()])
-        ref = weakref.ref(d[0])
+    def test_popleft(self) -> None:
+        d: concurrency.ConcurrentDeque[object] = concurrency.ConcurrentDeque[object](
+            [self._TestObject()]
+        )
+        ref: weakref.ref[object] = weakref.ref(d[0])
 
         d.popleft()
         gc.collect()
 
         self.assertIsNone(ref())
 
-    def test_remove_head(self):
-        d = concurrency.ConcurrentDeque([self._TestObject(), 1, 2, 3])
-        ref = weakref.ref(d[0])
+    def test_remove_head(self) -> None:
+        d: concurrency.ConcurrentDeque[object] = concurrency.ConcurrentDeque[object](
+            [self._TestObject(), 1, 2, 3]
+        )
+        ref: weakref.ref[object] = weakref.ref(d[0])
 
         d.remove(d[0])
         gc.collect()
 
         self.assertIsNone(ref())
 
-    def test_remove_tail(self):
-        d = concurrency.ConcurrentDeque([1, 2, 3, self._TestObject()])
-        ref = weakref.ref(d[-1])
+    def test_remove_tail(self) -> None:
+        d: concurrency.ConcurrentDeque[object] = concurrency.ConcurrentDeque[object](
+            [1, 2, 3, self._TestObject()]
+        )
+        ref: weakref.ref[object] = weakref.ref(d[-1])
 
         d.remove(d[-1])
         gc.collect()
 
         self.assertIsNone(ref())
 
-    def test_remove_inner(self):
-        d = concurrency.ConcurrentDeque([1, 2, self._TestObject(), 3])
-        ref = weakref.ref(d[2])
+    def test_remove_inner(self) -> None:
+        d: concurrency.ConcurrentDeque[object] = concurrency.ConcurrentDeque[object](
+            [1, 2, self._TestObject(), 3]
+        )
+        ref: weakref.ref[object] = weakref.ref(d[2])
 
         d.remove(d[2])
         gc.collect()
 
         self.assertIsNone(ref())
 
-    def test_rotate(self):
-        d = concurrency.ConcurrentDeque([1, 2, 3, self._TestObject()])
-        ref = weakref.ref(d[3])
+    def test_rotate(self) -> None:
+        d: concurrency.ConcurrentDeque[object] = concurrency.ConcurrentDeque[object](
+            [1, 2, 3, self._TestObject()]
+        )
+        ref: weakref.ref[object] = weakref.ref(d[3])
 
         d.rotate(1)
         d.popleft()
@@ -1088,14 +1145,18 @@ class TestConcurrentDequeGC(unittest.TestCase):
 
         self.assertIsNone(ref())
 
-    def test_rotate_cycle(self):
-        d1 = concurrency.ConcurrentDeque([1, 2, 3])
-        d2 = concurrency.ConcurrentDeque([4, 5, 6])
+    def test_rotate_cycle(self) -> None:
+        d1: concurrency.ConcurrentDeque[object] = concurrency.ConcurrentDeque[object](
+            [1, 2, 3]
+        )
+        d2: concurrency.ConcurrentDeque[object] = concurrency.ConcurrentDeque[object](
+            [4, 5, 6]
+        )
 
         d1.append(d2)
         d2.append(d1)
-        ref1 = weakref.ref(d1)
-        ref2 = weakref.ref(d2)
+        ref1: weakref.ref[concurrency.ConcurrentDeque[object]] = weakref.ref(d1)
+        ref2: weakref.ref[concurrency.ConcurrentDeque[object]] = weakref.ref(d2)
 
         d1.rotate(1)
         d2.rotate(1)
@@ -1109,38 +1170,48 @@ class TestConcurrentDequeGC(unittest.TestCase):
 
 
 class TestConcurrentGatheringIterator(unittest.TestCase):
-    def test_smoke(self):
-        iterator = concurrency.ConcurrentGatheringIterator()
+    def test_smoke(self) -> None:
+        iterator: concurrency.ConcurrentGatheringIterator = (
+            concurrency.ConcurrentGatheringIterator()
+        )
         iterator.insert(0, 10)
         self.assertEqual(list(iterator.iterator(0)), [10])
 
-    def test_multiple_inserts(self):
-        iterator = concurrency.ConcurrentGatheringIterator()
+    def test_multiple_inserts(self) -> None:
+        iterator: concurrency.ConcurrentGatheringIterator = (
+            concurrency.ConcurrentGatheringIterator()
+        )
         for i in range(10):
             iterator.insert(i, i)
         self.assertEqual(list(iterator.iterator(9)), list(range(10)))
 
-    def test_multiple_threads(self):
-        iterator = concurrency.ConcurrentGatheringIterator()
+    def test_multiple_threads(self) -> None:
+        iterator: concurrency.ConcurrentGatheringIterator = (
+            concurrency.ConcurrentGatheringIterator()
+        )
 
-        def worker(n, offset):
+        def worker(n: int, offset: int) -> None:
             for i in range(n):
                 i += n * offset
                 iterator.insert(i, i)
 
         for i in range(5):
-            threads = [threading.Thread(target=worker, args=(10, i)) for i in range(10)]
+            threads: list[threading.Thread] = [
+                threading.Thread(target=worker, args=(10, i)) for i in range(10)
+            ]
             for t in reversed(threads):
                 t.start()
             for t in threads:
                 t.join()
             self.assertEqual(list(iterator.iterator(99)), list(range(100)))
 
-    def test_iterator_failure(self):
-        iterator = concurrency.ConcurrentGatheringIterator()
-        iterator._dict = BreakingDict()
+    def test_iterator_failure(self) -> None:
+        iterator: concurrency.ConcurrentGatheringIterator = (
+            concurrency.ConcurrentGatheringIterator()
+        )
+        iterator._dict = BreakingDict()  # pyre-ignore[8]
 
-        def worker():
+        def worker() -> None:
             try:
                 iterator.insert(0, None)
             except RuntimeError:
@@ -1149,75 +1220,84 @@ class TestConcurrentGatheringIterator(unittest.TestCase):
                 # propagate further than this.
                 pass
 
-        t = threading.Thread(target=worker)
+        t: threading.Thread = threading.Thread(target=worker)
         t.start()
         t.join()
         with self.assertRaises(RuntimeError):
             list(iterator.iterator(0))
 
-    def test_iterator_local(self):
-        iterator = concurrency.ConcurrentGatheringIterator()
+    def test_iterator_local(self) -> None:
+        iterator: concurrency.ConcurrentGatheringIterator = (
+            concurrency.ConcurrentGatheringIterator()
+        )
         iterator.insert(0, 10)
         self.assertEqual(list(iterator.iterator_local(0)), [10])
 
-    def test_empty_iterator(self):
-        iterator = concurrency.ConcurrentGatheringIterator()
+    def test_empty_iterator(self) -> None:
+        iterator: concurrency.ConcurrentGatheringIterator = (
+            concurrency.ConcurrentGatheringIterator()
+        )
 
-        def worker():
+        def worker() -> None:
             time.sleep(0.1)
             iterator.insert(0, 10)
 
         for _ in range(5):
-            t = threading.Thread(target=worker)
+            t: threading.Thread = threading.Thread(target=worker)
             t.start()
             self.assertEqual(list(iterator.iterator(0)), [10])
 
-    def test_max_key(self):
-        iterator = concurrency.ConcurrentGatheringIterator()
+    def test_max_key(self) -> None:
+        iterator: concurrency.ConcurrentGatheringIterator = (
+            concurrency.ConcurrentGatheringIterator()
+        )
         for i in range(10):
             iterator.insert(i, i)
         self.assertEqual(list(iterator.iterator(5)), list(range(6)))
 
-    def test_clear(self):
-        iterator = concurrency.ConcurrentGatheringIterator()
+    def test_clear(self) -> None:
+        iterator: concurrency.ConcurrentGatheringIterator = (
+            concurrency.ConcurrentGatheringIterator()
+        )
         iterator.insert(0, 10)
         self.assertEqual(list(iterator.iterator(0, clear=True)), [10])
 
 
 class TestAtomicReference(unittest.TestCase):
-    def test_set_get(self):
-        ref = concurrency.AtomicReference()
+    def test_set_get(self) -> None:
+        ref: concurrency.AtomicReference = concurrency.AtomicReference(None)
         ref.set("value")
         self.assertEqual(ref.get(), "value")
 
-    def test_exchange(self):
-        ref = concurrency.AtomicReference()
+    def test_exchange(self) -> None:
+        ref: concurrency.AtomicReference = concurrency.AtomicReference(None)
         ref.set("old_value")
-        new_value = "new_value"
-        exchanged_value = ref.exchange(new_value)
+        new_value: str = "new_value"
+        exchanged_value: str | None = ref.exchange(new_value)
         self.assertEqual(exchanged_value, "old_value")
         self.assertEqual(ref.get(), new_value)
 
-    def test_compare_exchange(self):
-        ov = "old_value"
-        mv = "middle_value"
-        nv = "new_value"
-        ref = concurrency.AtomicReference(ov)
+    def test_compare_exchange(self) -> None:
+        ov: str = "old_value"
+        mv: str = "middle_value"
+        nv: str = "new_value"
+        # pyre-ignore[9]
+        ref: concurrency.AtomicReference = concurrency.AtomicReference(ov)
         ref.set(mv)
         self.assertFalse(ref.compare_exchange(ov, nv))
         self.assertIs(ref.get(), mv)
         self.assertTrue(ref.compare_exchange(mv, nv))
         self.assertIs(ref.get(), nv)
 
-    def test_concurrency_set(self):
-        ref = concurrency.AtomicReference()
+    def test_concurrency_set(self) -> None:
+        ref: concurrency.AtomicReference = concurrency.AtomicReference(None)
 
-        def set_ref(value):
+        def set_ref(value: int) -> None:
             ref.set(value)
 
-        threads = []
+        threads: list[threading.Thread] = []
         for i in range(10):
-            t = threading.Thread(target=set_ref, args=(i,))
+            t: threading.Thread = threading.Thread(target=set_ref, args=(i,))
             threads.append(t)
             t.start()
 
@@ -1226,16 +1306,16 @@ class TestAtomicReference(unittest.TestCase):
 
         self.assertIn(ref.get(), range(10))
 
-    def test_concurrency_exchange(self):
-        ref = concurrency.AtomicReference()
+    def test_concurrency_exchange(self) -> None:
+        ref: concurrency.AtomicReference = concurrency.AtomicReference(None)
         ref.set(0)
 
-        def exchange_ref(value):
+        def exchange_ref(value: int) -> None:
             ref.exchange(value)
 
-        threads = []
+        threads: list[threading.Thread] = []
         for i in range(1, 11):
-            t = threading.Thread(target=exchange_ref, args=(i,))
+            t: threading.Thread = threading.Thread(target=exchange_ref, args=(i,))
             threads.append(t)
             t.start()
 
@@ -1244,14 +1324,14 @@ class TestAtomicReference(unittest.TestCase):
 
         self.assertIn(ref.get(), range(1, 11))
 
-    def test_gc_acyclic(self):
+    def test_gc_acyclic(self) -> None:
         class Foo:
             pass
 
         for exchange in True, False:
-            ref = concurrency.AtomicReference()
-            obj = Foo()
-            weak_obj = weakref.ref(obj)
+            ref: concurrency.AtomicReference = concurrency.AtomicReference(None)
+            obj: Foo = Foo()
+            weak_obj: weakref.ref[Foo] = weakref.ref(obj)
             ref.set(obj)
             del obj
             if exchange:
@@ -1261,18 +1341,18 @@ class TestAtomicReference(unittest.TestCase):
             gc.collect()
             self.assertIsNone(weak_obj())
 
-    def test_gc_cas(self):
-        ov = "old_value"
-        mv = "middle_value"
-        nv = "new_value"
-        ref = concurrency.AtomicReference()
+    def test_gc_cas(self) -> None:
+        ov: str = "old_value"
+        mv: str = "middle_value"
+        nv: str = "new_value"
+        ref: concurrency.AtomicReference = concurrency.AtomicReference(None)
         ref.set(ov)
 
         class Foo:
             pass
 
-        obj = Foo()
-        weak_obj = weakref.ref(obj)
+        obj: Foo = Foo()
+        weak_obj: weakref.ref[Foo] = weakref.ref(obj)
         ref.compare_exchange(ov, obj)
         ref.compare_exchange(obj, mv)
         ref.compare_exchange(mv, obj)
@@ -1282,11 +1362,11 @@ class TestAtomicReference(unittest.TestCase):
         ref.exchange(None)
         self.assertIsNone(weak_obj())
 
-    def test_gc_cyclic(self):
+    def test_gc_cyclic(self) -> None:
         for delete_ref in True, False:
-            ref = concurrency.AtomicReference()
-            obj1 = concurrency.AtomicReference()
-            obj2 = concurrency.AtomicReference()
+            ref: concurrency.AtomicReference = concurrency.AtomicReference(None)
+            obj1: concurrency.AtomicReference = concurrency.AtomicReference(None)
+            obj2: concurrency.AtomicReference = concurrency.AtomicReference(None)
             obj1.set(obj2)
             obj2.set(obj1)
             ref.set(obj1)
@@ -1302,15 +1382,15 @@ class TestAtomicReference(unittest.TestCase):
             gc.collect()
             self.assertTrue(gc.garbage == [])
 
-    def test_arg_count(self):
-        x = concurrency.AtomicReference()
+    def test_arg_count(self) -> None:
+        x: concurrency.AtomicReference = concurrency.AtomicReference(None)
         self.assertIs(x.get(), None)
-        y = concurrency.AtomicReference(x)
+        y: concurrency.AtomicReference = concurrency.AtomicReference(x)
         self.assertIs(y.get(), x)
         with self.assertRaisesRegex(
             TypeError, r"AtomicReference\(\) takes zero or one argument$"
         ):
-            concurrency.AtomicReference(x, y)
+            concurrency.AtomicReference(x, y)  # pyre-ignore[19]
 
 
 if __name__ == "__main__":
