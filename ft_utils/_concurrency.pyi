@@ -2,7 +2,17 @@
 
 # pyre-strict
 
-from typing import Generic, Iterator, Optional, Sequence, TypeVar
+from typing import (
+    Generic,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    TypeVar,
+    Union,
+)
 
 K = TypeVar("K")
 V = TypeVar("V")
@@ -14,7 +24,18 @@ class ConcurrentDict(Generic[K, V]):
     def __getitem__(self, key: K) -> V: ...
     def __delitem__(self, key: K) -> None: ...
     def __len__(self) -> int: ...
+    def __iter__(self) -> Iterator[K]: ...
     def as_dict(self) -> dict[K, V]: ...
+    def clear(self) -> None: ...
+    def get(self, key: K, default: V = ...) -> V: ...  # pyre-ignore[24]
+    def update(
+        self,
+        other: Union[Mapping[K, V], "ConcurrentDict[K, V]", None] = ...,
+        **kwargs: V,
+    ) -> None: ...
+    def keys(self) -> List[K]: ...
+    def values(self) -> List[V]: ...
+    def items(self) -> List[Tuple[K, V]]: ...
 
 E = TypeVar("E")
 

@@ -144,6 +144,345 @@ static PyObject* ConcurrentDict_as_dict(
   return dict;
 }
 
+/* Clear all entries from the ConcurrentDict without deallocating buckets. */
+static PyObject* ConcurrentDict_clearmethod(
+    ConcurrentDictObject* self,
+    PyObject* Py_UNUSED(args)) {
+  for (Py_ssize_t i = 0; i < self->size; i++) {
+    if (self->buckets[i]) {
+      PyDict_Clear(self->buckets[i]);
+    }
+  }
+  Py_RETURN_NONE;
+}
+
+/* Get a value by key, returning a default if not found. */
+static PyObject* ConcurrentDict_get(
+    ConcurrentDictObject* self,
+    PyObject* args) {
+  PyObject* key;
+  PyObject* default_value = Py_None;
+
+  if (!PyArg_ParseTuple(args, "O|O", &key, &default_value)) {
+    return NULL;
+  }
+
+  Py_hash_t hash = PyObject_Hash(key);
+  if (hash == -1 && PyErr_Occurred()) {
+    return NULL;
+  }
+
+  Py_ssize_t index = hash % self->size;
+  if (index < 0) {
+    index = -index;
+  }
+
+  PyObject* value = NULL;
+  int result = PyDict_GetItemRef(self->buckets[index], key, &value);
+  if (result < 0) {
+    return NULL;
+  } else if (result == 0) {
+    return Py_NewRef(default_value);
+  }
+
+  return value;
+}
+
+/* Update from a mapping that supports keys() and __getitem__. */
+static int ConcurrentDict_update_from_keys(
+    ConcurrentDictObject* self,
+    PyObject* source,
+    PyObject* keys) {
+  PyObject* iter = PyObject_GetIter(keys);
+  if (iter == NULL) {
+    return -1;
+  }
+  PyObject* key;
+  while ((key = PyIter_Next(iter)) != NULL) {
+    PyObject* value = PyObject_GetItem(source, key);
+    if (value == NULL) {
+      Py_DECREF(key);
+      Py_DECREF(iter);
+      return -1;
+    }
+    int rc = ConcurrentDict_setitem(self, key, value);
+    Py_DECREF(key);
+    Py_DECREF(value);
+    if (rc < 0) {
+      Py_DECREF(iter);
+      return -1;
+    }
+  }
+  Py_DECREF(iter);
+  if (PyErr_Occurred()) {
+    return -1;
+  }
+  return 0;
+}
+
+/* Update from an iterable of (key, value) pairs. */
+static int ConcurrentDict_update_from_pairs(
+    ConcurrentDictObject* self,
+    PyObject* source) {
+  PyObject* iter = PyObject_GetIter(source);
+  if (iter == NULL) {
+    return -1;
+  }
+  PyObject* item;
+  while ((item = PyIter_Next(iter)) != NULL) {
+    PyObject* key = NULL;
+    PyObject* value = NULL;
+    if (!PyArg_ParseTuple(item, "OO", &key, &value)) {
+      Py_DECREF(item);
+      Py_DECREF(iter);
+      return -1;
+    }
+    int rc = ConcurrentDict_setitem(self, key, value);
+    Py_DECREF(item);
+    if (rc < 0) {
+      Py_DECREF(iter);
+      return -1;
+    }
+  }
+  Py_DECREF(iter);
+  if (PyErr_Occurred()) {
+    return -1;
+  }
+  return 0;
+}
+
+/* Update this ConcurrentDict from a mapping or iterable of key-value pairs.
+ *
+ *   cd = ConcurrentDict()
+ *   cd.update({"a": 1, "b": 2})        # from a mapping
+ *   cd.update([("c", 3), ("d", 4)])     # from (key, value) pairs
+ *   cd.update(e=5, f=6)                 # from keyword arguments
+ *   cd.update({"g": 7}, h=8)            # positional + kwargs combined
+ */
+static PyObject* ConcurrentDict_update(
+    ConcurrentDictObject* self,
+    PyObject* args,
+    PyObject* kwds) {
+  /* Optional positional arg: a mapping or iterable of (key, value) pairs
+   * to merge into this ConcurrentDict. */
+  PyObject* source = NULL;
+
+  if (!PyArg_ParseTuple(args, "|O", &source)) {
+    return NULL;
+  }
+
+  if (source != NULL) {
+    PyObject* keys = PyObject_CallMethod(source, "keys", NULL);
+    if (keys != NULL) {
+      int rc = ConcurrentDict_update_from_keys(self, source, keys);
+      Py_DECREF(keys);
+      if (rc < 0) {
+        return NULL;
+      }
+    } else {
+      PyErr_Clear();
+      if (ConcurrentDict_update_from_pairs(self, source) < 0) {
+        return NULL;
+      }
+    }
+  }
+
+  /* Handle keyword arguments */
+  if (kwds != NULL && PyDict_Size(kwds) > 0) {
+    PyObject* key;
+    PyObject* value;
+    Py_ssize_t pos = 0;
+    while (PyDict_Next(kwds, &pos, &key, &value)) {
+      if (ConcurrentDict_setitem(self, key, value) < 0) {
+        return NULL;
+      }
+    }
+  }
+
+  Py_RETURN_NONE;
+}
+
+/* Return a list of all keys. Not thread consistent. */
+static PyObject* ConcurrentDict_keys(
+    ConcurrentDictObject* self,
+    PyObject* Py_UNUSED(args)) {
+  PyObject* list = PyList_New(0);
+  if (!list) {
+    return NULL;
+  }
+  for (Py_ssize_t i = 0; i < self->size; i++) {
+    if (self->buckets[i]) {
+      PyObject* bucket_keys = PyDict_Keys(self->buckets[i]);
+      if (!bucket_keys) {
+        Py_DECREF(list);
+        return NULL;
+      }
+      Py_ssize_t n = PyList_Size(bucket_keys);
+      for (Py_ssize_t j = 0; j < n; j++) {
+        if (PyList_Append(list, PyList_GetItem(bucket_keys, j)) < 0) {
+          Py_DECREF(bucket_keys);
+          Py_DECREF(list);
+          return NULL;
+        }
+      }
+      Py_DECREF(bucket_keys);
+    }
+  }
+  return list;
+}
+
+/* Return a list of all values. Not thread consistent. */
+static PyObject* ConcurrentDict_values(
+    ConcurrentDictObject* self,
+    PyObject* Py_UNUSED(args)) {
+  PyObject* list = PyList_New(0);
+  if (!list) {
+    return NULL;
+  }
+  for (Py_ssize_t i = 0; i < self->size; i++) {
+    if (self->buckets[i]) {
+      PyObject* bucket_values = PyDict_Values(self->buckets[i]);
+      if (!bucket_values) {
+        Py_DECREF(list);
+        return NULL;
+      }
+      Py_ssize_t n = PyList_Size(bucket_values);
+      for (Py_ssize_t j = 0; j < n; j++) {
+        if (PyList_Append(list, PyList_GetItem(bucket_values, j)) < 0) {
+          Py_DECREF(bucket_values);
+          Py_DECREF(list);
+          return NULL;
+        }
+      }
+      Py_DECREF(bucket_values);
+    }
+  }
+  return list;
+}
+
+/* Return a list of all (key, value) tuples. Not thread consistent. */
+static PyObject* ConcurrentDict_items(
+    ConcurrentDictObject* self,
+    PyObject* Py_UNUSED(args)) {
+  PyObject* list = PyList_New(0);
+  if (!list) {
+    return NULL;
+  }
+  for (Py_ssize_t i = 0; i < self->size; i++) {
+    if (self->buckets[i]) {
+      PyObject* bucket_items = PyDict_Items(self->buckets[i]);
+      if (!bucket_items) {
+        Py_DECREF(list);
+        return NULL;
+      }
+      Py_ssize_t n = PyList_Size(bucket_items);
+      for (Py_ssize_t j = 0; j < n; j++) {
+        if (PyList_Append(list, PyList_GetItem(bucket_items, j)) < 0) {
+          Py_DECREF(bucket_items);
+          Py_DECREF(list);
+          return NULL;
+        }
+      }
+      Py_DECREF(bucket_items);
+    }
+  }
+  return list;
+}
+
+/* ---- Iterator ---- */
+
+typedef struct {
+  PyObject_HEAD ConcurrentDictObject* dict;
+  Py_ssize_t bucket_index;
+  Py_ssize_t pos; /* position within current bucket (for PyDict_Next) */
+  PyObject* weakreflist;
+} ConcurrentDictIteratorObject;
+
+static int ConcurrentDictIterator_clear(ConcurrentDictIteratorObject* self) {
+  Py_CLEAR(self->dict);
+  return 0;
+}
+
+static int ConcurrentDictIterator_traverse(
+    ConcurrentDictIteratorObject* self,
+    visitproc visit,
+    void* arg) {
+  Py_VISIT(self->dict);
+  return 0;
+}
+
+static void ConcurrentDictIterator_dealloc(ConcurrentDictIteratorObject* self) {
+  PyObject_GC_UnTrack(self);
+  if (self->weakreflist != NULL) {
+    PyObject_ClearWeakRefs((PyObject*)self);
+  }
+  (void)ConcurrentDictIterator_clear(self);
+  PyObject_GC_Del(self);
+}
+
+/* Return the next key from the ConcurrentDict.
+ * Walks through buckets sequentially, using PyDict_Next within each bucket.
+ * Not thread consistent — concurrent modifications may cause skipped or
+ * repeated keys.
+ */
+static PyObject* ConcurrentDictIterator_next(
+    ConcurrentDictIteratorObject* self) {
+  ConcurrentDictObject* dict = self->dict;
+  if (dict == NULL) {
+    return NULL;
+  }
+
+  PyObject* key;
+  PyObject* value;
+  while (self->bucket_index < dict->size) {
+    PyObject* bucket = dict->buckets[self->bucket_index];
+    if (bucket && PyDict_Next(bucket, &self->pos, &key, &value)) {
+      return Py_NewRef(key);
+    }
+    /* Move to next bucket */
+    self->bucket_index++;
+    self->pos = 0;
+  }
+  /* Exhausted all buckets */
+  return NULL;
+}
+
+PyTypeObject ConcurrentDictIteratorType = {
+    PyVarObject_HEAD_INIT(NULL, 0).tp_name =
+        "_concurrency.ConcurrentDictIterator",
+    .tp_doc = "ConcurrentDictIterator",
+    .tp_basicsize = sizeof(ConcurrentDictIteratorObject),
+    .tp_itemsize = 0,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .tp_weaklistoffset = offsetof(ConcurrentDictIteratorObject, weakreflist),
+
+    .tp_clear = (inquiry)ConcurrentDictIterator_clear,
+    .tp_traverse = (traverseproc)ConcurrentDictIterator_traverse,
+    .tp_dealloc = (destructor)ConcurrentDictIterator_dealloc,
+
+    .tp_iter = PyObject_SelfIter,
+    .tp_iternext = (iternextfunc)ConcurrentDictIterator_next,
+};
+
+static PyObject* ConcurrentDict_iter(ConcurrentDictObject* self) {
+  ConcurrentDictIteratorObject* iterator = PyObject_GC_New(
+      ConcurrentDictIteratorObject, &ConcurrentDictIteratorType);
+
+  if (iterator == NULL) {
+    return NULL;
+  }
+
+  iterator->dict = (ConcurrentDictObject*)Py_NewRef(self);
+  iterator->bucket_index = 0;
+  iterator->pos = 0;
+  iterator->weakreflist = NULL;
+
+  PyObject_GC_Track(iterator);
+  return (PyObject*)iterator;
+}
+
+/* ---- GC / infrastructure ---- */
+
 static int ConcurrentDict_traverse(
     ConcurrentDictObject* self,
     visitproc visit,
@@ -181,6 +520,34 @@ static PyMethodDef ConcurrentDict_methods[] = {
      METH_NOARGS,
      PyDoc_STR(
          "Create a dict from the key value pairs in this ConcurrentDict. Not thread consistent.")},
+    {"clear",
+     (PyCFunction)ConcurrentDict_clearmethod,
+     METH_NOARGS,
+     PyDoc_STR(
+         "Remove all items from the ConcurrentDict. Not thread consistent.")},
+    {"get",
+     (PyCFunction)ConcurrentDict_get,
+     METH_VARARGS,
+     PyDoc_STR(
+         "D.get(key[, default]) -> value. Return value for key, or default if not present.")},
+    {"update",
+     (PyCFunction)ConcurrentDict_update,
+     METH_VARARGS | METH_KEYWORDS,
+     PyDoc_STR(
+         "D.update([other, ]**kwargs) -> None. Update from dict/iterable/kwargs. Not thread consistent.")},
+    {"keys",
+     (PyCFunction)ConcurrentDict_keys,
+     METH_NOARGS,
+     PyDoc_STR("Return a list of all keys. Not thread consistent.")},
+    {"values",
+     (PyCFunction)ConcurrentDict_values,
+     METH_NOARGS,
+     PyDoc_STR("Return a list of all values. Not thread consistent.")},
+    {"items",
+     (PyCFunction)ConcurrentDict_items,
+     METH_NOARGS,
+     PyDoc_STR(
+         "Return a list of all (key, value) pairs. Not thread consistent.")},
     {NULL, NULL, 0, NULL}};
 
 PyTypeObject ConcurrentDictType = {
@@ -197,4 +564,5 @@ PyTypeObject ConcurrentDictType = {
     .tp_traverse = (traverseproc)ConcurrentDict_traverse,
     .tp_clear = (inquiry)ConcurrentDict_clear,
     .tp_weaklistoffset = offsetof(ConcurrentDictObject, weakreflist),
+    .tp_iter = (getiterfunc)ConcurrentDict_iter,
 };

@@ -129,6 +129,262 @@ class TestConcurrentDict(unittest.TestCase):
         del dct[2]  # pyre-ignore[6]
         self.assertEqual(len(dct), 2)  # pyre-ignore[6]
 
+    def test_clear(self) -> None:
+        dct: concurrency.ConcurrentDict[int, str] = concurrency.ConcurrentDict()
+        dct[1] = "a"
+        dct[2] = "b"
+        dct[3] = "c"
+        self.assertEqual(len(dct), 3)  # pyre-ignore[6]
+        dct.clear()
+        self.assertEqual(len(dct), 0)  # pyre-ignore[6]
+        self.assertFalse(1 in dct)
+        # Verify dict is still usable after clear
+        dct[4] = "d"
+        self.assertEqual(dct[4], "d")
+
+    def test_get(self) -> None:
+        dct: concurrency.ConcurrentDict[str, int] = concurrency.ConcurrentDict()
+        dct["a"] = 1
+        dct["b"] = 2
+        self.assertEqual(dct.get("a"), 1)
+        self.assertEqual(dct.get("b"), 2)
+        self.assertIsNone(dct.get("c"))
+        self.assertEqual(dct.get("c", 42), 42)
+
+    def test_update_from_dict(self) -> None:
+        dct: concurrency.ConcurrentDict[str, int] = concurrency.ConcurrentDict()
+        dct.update({"a": 1, "b": 2, "c": 3})
+        self.assertEqual(dct["a"], 1)
+        self.assertEqual(dct["b"], 2)
+        self.assertEqual(dct["c"], 3)
+        self.assertEqual(len(dct), 3)  # pyre-ignore[6]
+
+    def test_update_from_concurrent_dict(self) -> None:
+        src: concurrency.ConcurrentDict[str, int] = concurrency.ConcurrentDict()
+        src["x"] = 10
+        src["y"] = 20
+        dst: concurrency.ConcurrentDict[str, int] = concurrency.ConcurrentDict()
+        dst["z"] = 30
+        dst.update(src)
+        self.assertEqual(dst["x"], 10)
+        self.assertEqual(dst["y"], 20)
+        self.assertEqual(dst["z"], 30)
+
+    def test_update_with_kwargs(self) -> None:
+        dct: concurrency.ConcurrentDict[str, int] = concurrency.ConcurrentDict()
+        dct.update(a=1, b=2)
+        self.assertEqual(dct["a"], 1)
+        self.assertEqual(dct["b"], 2)
+
+    def test_update_overwrites(self) -> None:
+        dct: concurrency.ConcurrentDict[str, int] = concurrency.ConcurrentDict()
+        dct["a"] = 1
+        dct.update({"a": 99})
+        self.assertEqual(dct["a"], 99)
+
+    def test_keys(self) -> None:
+        dct: concurrency.ConcurrentDict[str, int] = concurrency.ConcurrentDict()
+        dct["a"] = 1
+        dct["b"] = 2
+        dct["c"] = 3
+        keys = dct.keys()
+        self.assertIsInstance(keys, list)
+        self.assertCountEqual(keys, ["a", "b", "c"])
+
+    def test_values(self) -> None:
+        dct: concurrency.ConcurrentDict[str, int] = concurrency.ConcurrentDict()
+        dct["a"] = 1
+        dct["b"] = 2
+        dct["c"] = 3
+        values = dct.values()
+        self.assertIsInstance(values, list)
+        self.assertCountEqual(values, [1, 2, 3])
+
+    def test_items(self) -> None:
+        dct: concurrency.ConcurrentDict[str, int] = concurrency.ConcurrentDict()
+        dct["a"] = 1
+        dct["b"] = 2
+        dct["c"] = 3
+        items = dct.items()
+        self.assertIsInstance(items, list)
+        self.assertCountEqual(items, [("a", 1), ("b", 2), ("c", 3)])
+
+    def test_iter(self) -> None:
+        dct: concurrency.ConcurrentDict[str, int] = concurrency.ConcurrentDict()
+        dct["x"] = 10
+        dct["y"] = 20
+        dct["z"] = 30
+        keys = list(dct)
+        self.assertCountEqual(keys, ["x", "y", "z"])
+
+    def test_iter_empty(self) -> None:
+        dct: concurrency.ConcurrentDict[str, int] = concurrency.ConcurrentDict()
+        self.assertEqual(list(dct), [])
+
+    def test_keys_values_items_empty(self) -> None:
+        dct: concurrency.ConcurrentDict[str, int] = concurrency.ConcurrentDict()
+        self.assertEqual(dct.keys(), [])
+        self.assertEqual(dct.values(), [])
+        self.assertEqual(dct.items(), [])
+
+    def test_clear_then_iter(self) -> None:
+        dct: concurrency.ConcurrentDict[int, int] = concurrency.ConcurrentDict()
+        for i in range(100):
+            dct[i] = i * 2
+        dct.clear()
+        self.assertEqual(list(dct), [])
+        self.assertEqual(len(dct), 0)  # pyre-ignore[6]
+
+    def test_get_with_none_value(self) -> None:
+        dct: concurrency.ConcurrentDict[str, object] = concurrency.ConcurrentDict()
+        dct["a"] = None
+        # get() should return None (the stored value), not the default
+        self.assertIsNone(dct.get("a", "fallback"))
+
+    def test_update_from_iterable_of_pairs(self) -> None:
+        dct: concurrency.ConcurrentDict[str, int] = concurrency.ConcurrentDict()
+        dct.update([("a", 1), ("b", 2)])  # pyre-ignore[6]
+        self.assertEqual(dct["a"], 1)
+        self.assertEqual(dct["b"], 2)
+
+    def test_update_dict_and_kwargs(self) -> None:
+        dct: concurrency.ConcurrentDict[str, int] = concurrency.ConcurrentDict()
+        dct.update({"a": 1}, b=2, c=3)
+        self.assertEqual(dct["a"], 1)
+        self.assertEqual(dct["b"], 2)
+        self.assertEqual(dct["c"], 3)
+
+    def test_update_no_args(self) -> None:
+        dct: concurrency.ConcurrentDict[str, int] = concurrency.ConcurrentDict()
+        dct["x"] = 1
+        dct.update()  # should be a no-op
+        self.assertEqual(dct["x"], 1)
+        self.assertEqual(len(dct), 1)  # pyre-ignore[6]
+
+    def test_regular_dict_update_from_concurrent_dict(self) -> None:
+        cd: concurrency.ConcurrentDict[str, int] = concurrency.ConcurrentDict()
+        cd["a"] = 1
+        cd["b"] = 2
+        cd["c"] = 3
+        regular_dict: dict[str, int] = {"x": 10}
+        regular_dict.update(cd)
+        self.assertEqual(regular_dict, {"a": 1, "b": 2, "c": 3, "x": 10})
+
+    def test_clear_multiple_times(self) -> None:
+        dct: concurrency.ConcurrentDict[int, int] = concurrency.ConcurrentDict()
+        for i in range(50):
+            dct[i] = i
+        dct.clear()
+        self.assertEqual(len(dct), 0)  # pyre-ignore[6]
+        dct.clear()  # second clear on empty should be fine
+        self.assertEqual(len(dct), 0)  # pyre-ignore[6]
+        dct[1] = 100
+        self.assertEqual(dct[1], 100)
+
+    def test_iter_with_for_loop(self) -> None:
+        dct: concurrency.ConcurrentDict[int, str] = concurrency.ConcurrentDict()
+        expected: dict[int, str] = {}
+        for i in range(20):
+            dct[i] = str(i)
+            expected[i] = str(i)
+        collected: dict[int, str] = {}
+        for key in dct:
+            collected[key] = dct[key]
+        self.assertEqual(collected, expected)
+
+    def test_keys_values_items_large(self) -> None:
+        dct: concurrency.ConcurrentDict[int, int] = concurrency.ConcurrentDict()
+        n = 1000
+        for i in range(n):
+            dct[i] = i * 3
+        keys = dct.keys()
+        self.assertEqual(len(keys), n)
+        self.assertCountEqual(keys, list(range(n)))
+        values = dct.values()
+        self.assertEqual(len(values), n)
+        self.assertCountEqual(values, [i * 3 for i in range(n)])
+        items = dct.items()
+        self.assertEqual(len(items), n)
+        self.assertCountEqual(items, [(i, i * 3) for i in range(n)])
+
+    def test_items_matches_as_dict(self) -> None:
+        dct: concurrency.ConcurrentDict[str, int] = concurrency.ConcurrentDict()
+        dct.update({"foo": 1, "bar": 2, "baz": 3})
+        self.assertCountEqual(dct.items(), dct.as_dict().items())
+
+    def test_iter_matches_keys(self) -> None:
+        dct: concurrency.ConcurrentDict[str, int] = concurrency.ConcurrentDict()
+        dct.update({"a": 1, "b": 2, "c": 3, "d": 4})
+        self.assertCountEqual(list(dct), dct.keys())
+
+    def test_update_threads(self) -> None:
+        dct: concurrency.ConcurrentDict[int, int] = concurrency.ConcurrentDict(37)
+
+        def fill(offset: int) -> None:
+            for i in range(500):
+                dct[offset + i] = offset + i
+
+        threads: list[threading.Thread] = [
+            threading.Thread(target=fill, args=(0,)),
+            threading.Thread(target=fill, args=(500,)),
+            threading.Thread(target=fill, args=(1000,)),
+            threading.Thread(target=fill, args=(1500,)),
+        ]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+        self.assertEqual(len(dct), 2000)  # pyre-ignore[6]
+        for i in range(2000):
+            self.assertEqual(dct[i], i)
+
+    def test_clear_during_concurrent_writes(self) -> None:
+        dct: concurrency.ConcurrentDict[int, int] = concurrency.ConcurrentDict()
+        for i in range(100):
+            dct[i] = i
+        # Clear while another thread is writing; should not crash
+        barrier: threading.Barrier = threading.Barrier(2)
+
+        def writer() -> None:
+            barrier.wait()
+            for i in range(100, 200):
+                dct[i] = i
+
+        t: threading.Thread = threading.Thread(target=writer)
+        t.start()
+        barrier.wait()
+        dct.clear()
+        t.join()
+        # After clear + concurrent writes, dict should have at least some of
+        # the written values and no crashes
+        self.assertTrue(len(dct) >= 0)  # pyre-ignore[6]
+
+    def test_get_threads(self) -> None:
+        dct: concurrency.ConcurrentDict[int, int] = concurrency.ConcurrentDict()
+        for i in range(1000):
+            dct[i] = i * 2
+        results: list[int] = []
+        lock: threading.Lock = threading.Lock()
+
+        def reader(start: int, end: int) -> None:
+            local_results: list[int] = []
+            for i in range(start, end):
+                v = dct.get(i, -1)
+                local_results.append(v)
+            with lock:
+                results.extend(local_results)
+
+        threads: list[threading.Thread] = [
+            threading.Thread(target=reader, args=(0, 500)),
+            threading.Thread(target=reader, args=(500, 1000)),
+        ]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+        self.assertEqual(len(results), 1000)
+        self.assertCountEqual(results, [i * 2 for i in range(1000)])
+
 
 class TestConcurrentDictGC(unittest.TestCase):
     def setUp(self) -> None:

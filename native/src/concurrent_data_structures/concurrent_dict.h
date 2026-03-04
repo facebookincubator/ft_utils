@@ -6,5 +6,6 @@
 #include <Python.h>
 
 extern PyTypeObject ConcurrentDictType;
+extern PyTypeObject ConcurrentDictIteratorType;
 
 #endif /* CONCURRENT_DICT_H */

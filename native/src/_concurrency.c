@@ -11,6 +11,9 @@ static int exec_local_module(PyObject* module) {
   if (PyType_Ready(&ConcurrentDictType) < 0) {
     return -1;
   }
+  if (PyType_Ready(&ConcurrentDictIteratorType) < 0) {
+    return -1;
+  }
   if (PyType_Ready(&AtomicInt64Type) < 0) {
     return -1;
   }
@@ -43,6 +46,12 @@ static int exec_local_module(PyObject* module) {
           module,
           "ConcurrentDequeIterator",
           (PyObject*)&ConcurrentDequeIteratorType) < 0) {
+    return -1;
+  }
+  if (PyModule_AddObjectRef(
+          module,
+          "ConcurrentDictIterator",
+          (PyObject*)&ConcurrentDictIteratorType) < 0) {
     return -1;
   }
 
