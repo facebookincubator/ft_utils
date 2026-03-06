@@ -12,6 +12,7 @@ from typing import Callable
 
 import ft_utils.concurrency as concurrency
 import ft_utils.local as local
+from ft_utils.threading_test_utils import run_concurrently
 
 
 class TestConcurrentDict(unittest.TestCase):
@@ -56,20 +57,7 @@ class TestConcurrentDict(unittest.TestCase):
                 for i in range(1000):
                     del dct[str(-(i + 1))]
 
-        threads: list[threading.Thread] = [
-            threading.Thread(target=win),
-            threading.Thread(target=wstr),
-            threading.Thread(target=wdel),
-        ]
-        threads += [
-            threading.Thread(target=win),
-            threading.Thread(target=wstr),
-            threading.Thread(target=wdel),
-        ]
-        for thread in threads:
-            thread.start()
-        for thread in threads:
-            thread.join()
+        run_concurrently([win, wstr, wdel, win, wstr, wdel])
         for i in range(1000):
             self.assertEqual(dct[i], i + 1)
         for i in range(1000):
@@ -324,16 +312,14 @@ class TestConcurrentDict(unittest.TestCase):
             for i in range(500):
                 dct[offset + i] = offset + i
 
-        threads: list[threading.Thread] = [
-            threading.Thread(target=fill, args=(0,)),
-            threading.Thread(target=fill, args=(500,)),
-            threading.Thread(target=fill, args=(1000,)),
-            threading.Thread(target=fill, args=(1500,)),
-        ]
-        for t in threads:
-            t.start()
-        for t in threads:
-            t.join()
+        run_concurrently(
+            [
+                lambda: fill(0),
+                lambda: fill(500),
+                lambda: fill(1000),
+                lambda: fill(1500),
+            ]
+        )
         self.assertEqual(len(dct), 2000)  # pyre-ignore[6]
         for i in range(2000):
             self.assertEqual(dct[i], i)
@@ -374,14 +360,12 @@ class TestConcurrentDict(unittest.TestCase):
             with lock:
                 results.extend(local_results)
 
-        threads: list[threading.Thread] = [
-            threading.Thread(target=reader, args=(0, 500)),
-            threading.Thread(target=reader, args=(500, 1000)),
-        ]
-        for t in threads:
-            t.start()
-        for t in threads:
-            t.join()
+        run_concurrently(
+            [
+                lambda: reader(0, 500),
+                lambda: reader(500, 1000),
+            ]
+        )
         self.assertEqual(len(results), 1000)
         self.assertCountEqual(results, [i * 2 for i in range(1000)])
 
@@ -564,13 +548,7 @@ class TestAtomicInt64(unittest.TestCase):
             for _ in range(n):
                 ai.incr()
 
-        threads: list[threading.Thread] = [
-            threading.Thread(target=worker, args=(1000,)) for _ in range(10)
-        ]
-        for t in threads:
-            t.start()
-        for t in threads:
-            t.join()
+        run_concurrently(worker, 10, args=(1000,))
         self.assertEqual(ai.get(), 10000)
 
     def test_threads_set(self) -> None:
@@ -579,13 +557,7 @@ class TestAtomicInt64(unittest.TestCase):
         def worker(n: int) -> None:
             ai.set(n)
 
-        threads: list[threading.Thread] = [
-            threading.Thread(target=worker, args=(10,)) for _ in range(10)
-        ]
-        for t in threads:
-            t.start()
-        for t in threads:
-            t.join()
+        run_concurrently(worker, 10, args=(10,))
         self.assertEqual(ai.get(), 10)
 
     def test_format(self) -> None:
@@ -627,13 +599,7 @@ class TestConcurrentQueue(unittest.TestCase):
             for i in range(n):
                 q.push(i)
 
-        threads: list[threading.Thread] = [
-            threading.Thread(target=worker, args=(10,)) for _ in range(10)
-        ]
-        for t in threads:
-            t.start()
-        for t in threads:
-            t.join()
+        run_concurrently(worker, 10, args=(10,))
         for _ in range(100):
             x: object = q.pop()
             self.assertIn(x, list(range(10)))
@@ -1064,10 +1030,8 @@ class TestConcurrentDeque(unittest.TestCase):
         n_numbers: int = 100
 
         d: concurrency.ConcurrentDeque[int] = concurrency.ConcurrentDeque[int]()
-        b: threading.Barrier = threading.Barrier(n_workers, timeout=1)
 
         def worker() -> None:
-            b.wait()
             for i in range(n_numbers):
                 time.sleep(0.001)  # attempt to get interleaved appends
                 if i % 2 == 0:
@@ -1075,14 +1039,7 @@ class TestConcurrentDeque(unittest.TestCase):
                 else:
                     d.append(i)
 
-        threads: list[threading.Thread] = [
-            threading.Thread(target=worker) for _ in range(n_workers)
-        ]
-
-        for t in threads:
-            t.start()
-        for t in threads:
-            t.join()
+        run_concurrently(worker, n_workers)
 
         for i in range(n_workers * n_numbers):
             if i % 2 == 0:
@@ -1551,14 +1508,7 @@ class TestAtomicReference(unittest.TestCase):
         def set_ref(value: int) -> None:
             ref.set(value)
 
-        threads: list[threading.Thread] = []
-        for i in range(10):
-            t: threading.Thread = threading.Thread(target=set_ref, args=(i,))
-            threads.append(t)
-            t.start()
-
-        for t in threads:
-            t.join()
+        run_concurrently([lambda i=i: set_ref(i) for i in range(10)])
 
         self.assertIn(ref.get(), range(10))
 
@@ -1569,14 +1519,7 @@ class TestAtomicReference(unittest.TestCase):
         def exchange_ref(value: int) -> None:
             ref.exchange(value)
 
-        threads: list[threading.Thread] = []
-        for i in range(1, 11):
-            t: threading.Thread = threading.Thread(target=exchange_ref, args=(i,))
-            threads.append(t)
-            t.start()
-
-        for t in threads:
-            t.join()
+        run_concurrently([lambda i=i: exchange_ref(i) for i in range(1, 11)])
 
         self.assertIn(ref.get(), range(1, 11))
 
