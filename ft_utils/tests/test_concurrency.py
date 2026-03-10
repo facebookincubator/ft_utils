@@ -919,10 +919,12 @@ class TestStdConcurrentQueue(unittest.TestCase):
 
         for _ in range(5):
             t: threading.Thread = threading.Thread(target=worker)
+            flag.set(False)
             t.start()
             while not flag:
                 pass
             self.assertEqual(q.get(), 10)
+            t.join()
 
     def test_qsize(self) -> None:
         q: concurrency.StdConcurrentQueue = self._get_queue()
