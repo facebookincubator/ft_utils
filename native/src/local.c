@@ -514,7 +514,13 @@ static PyObject* LocalWrapper_getattro(
     return result;
   }
   PyErr_Clear();
-  return PyObject_GenericGetAttr(self->wrapped, attr_name);
+  result = PyObject_GenericGetAttr(self->wrapped, attr_name);
+  if (result) {
+    return result;
+  }
+  PyErr_Clear();
+  PyObject* target = _LW_Unwrap(self->wrapped);
+  return PyObject_GetAttr(target, attr_name);
 }
 
 static int LocalWrapper_setattro(

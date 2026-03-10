@@ -790,13 +790,35 @@ class WithSlots:
         self.b: object = b
 
 
-class WithProperties:
+class WithPropertiesOnly:
     def __init__(self, value: object) -> None:
         self._value: object = value
 
     @property
     def value(self) -> object:
         return self._value
+
+    @value.setter
+    def value(self, new_value: object) -> None:
+        self._value = new_value
+
+
+class WithProperties(WithPropertiesOnly):
+    def __getattr__(self, name: str) -> object:
+        return name
+
+
+class WithPropertiesWithWrappedWrapper:
+    def __init__(self, value: object) -> None:
+        self._value: object = value
+        self.wrapper: object | None = None
+
+    @property
+    def value(self) -> object:
+        return self._value
+
+    def __getattr__(self, name: str) -> object:
+        return getattr(self.wrapper, name)
 
     @value.setter
     def value(self, new_value: object) -> None:
@@ -832,10 +854,23 @@ class TestLocalWrapperAttributes(unittest.TestCase):
             _ = wrapper.nonexistent
 
     def test_error_on_getting_nonexistent_attribute(self) -> None:
-        obj: WithProperties = WithProperties(100)
+        obj: WithPropertiesOnly = WithPropertiesOnly(100)
         wrapper: LocalWrapper = LocalWrapper(obj)
         with self.assertRaises(AttributeError):
             wrapper.nonexistent
+
+    def test_get_attr_(self) -> None:
+        obj: WithProperties = WithProperties(100)
+        wrapper: LocalWrapper = LocalWrapper(obj)
+        wrapper.name = "test"
+        self.assertEqual(wrapper.name, "test")
+
+    def test_recursion_guard(self) -> None:
+        obj = WithPropertiesWithWrappedWrapper(100)
+        local_wrapper = LocalWrapper(obj)
+        obj.wrapper = local_wrapper
+        with self.assertRaises(RecursionError):
+            local_wrapper.nonexistent
 
 
 class TestLocalWrapperCallables(unittest.TestCase):
