@@ -33,8 +33,7 @@ See to [documentation](docs/index.md).
 ft_utils is built and tested against the following configurations:
 
 |               | manylinux: glibc 2.17+ x86-64 | manylinux: glibc 2.17+ i686 | musllinux: musl 1.2+ x86-64 | musllinux: musl 1.2+ i686 | Windows x86-64 | macOS 11.0+ ARM64 | manylinux: glibc 2.34+ x86-64 |
-| ------------- | ----------------------------- | --------------------------- | --------------------------- | ------------------------- | -------------- | ----------------- | ----------------------------- |
-| CPython 3.12  | ✅                            | ✅                          | ✅                          | ✅                        | ✅             | ✅                |                               |
+| ------------- | ----------------------------- | --------------------------- | --------------------------- | ------------------------- | -------------- | ----------------- | -----------------------------
 | CPython 3.13  | ✅                            | ✅                          | ✅                          | ✅                        | ✅             | ✅                |                               |
 | CPython 3.13t | ✅                            | ✅                          | ✅                          | ✅                        | ✅             | ✅                |                               |
 | CPython 3.14  |                               |                             |                             |                           |                |                   | ✅                            |
@@ -45,8 +44,7 @@ These wheels are uploaded to and available on [PyPI](https://pypi.org/project/ft
 ### Build from source
 
 You will need a source code version of CPython. To run for Free Threaded Python, at the time of writing, this means
-you will require CPython 3.13 and compile as 3.13t. This code will also compile under 3.12 but then you only get the
-GIL version.
+you will require CPython 3.13+ and compile as <PYTHON_VERSION>t.
 
 Please ensure you are in a virtual environment. If you cannot, or do not wish to do this then you will need to comment
 out the call to check_env() in setup.py.
