@@ -649,6 +649,7 @@ class TestConcurrentQueue(unittest.TestCase):
             t: threading.Thread = threading.Thread(target=worker)
             t.start()
             self.assertEqual(q.pop(), 10)
+            t.join()
 
     def test_pop(self) -> None:
         q: concurrency.ConcurrentQueue = self._get_queue()
@@ -979,6 +980,7 @@ class TestStdConcurrentQueue(unittest.TestCase):
         t.start()
         with self.assertRaises(concurrency.ShutDown):
             q.put(32)
+        t.join()
 
 
 class TestConcurrentDeque(unittest.TestCase):
@@ -1461,6 +1463,7 @@ class TestConcurrentGatheringIterator(unittest.TestCase):
             t: threading.Thread = threading.Thread(target=worker)
             t.start()
             self.assertEqual(list(iterator.iterator(0)), [10])
+            t.join()
 
     def test_max_key(self) -> None:
         iterator: concurrency.ConcurrentGatheringIterator = (
