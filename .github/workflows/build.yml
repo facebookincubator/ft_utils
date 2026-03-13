@@ -23,6 +23,7 @@ jobs:
   cibuildwheel:
     strategy:
       fail-fast: false
+      max-parallel: 3
       matrix:
         include:
           - wheel: "linux-3.13"
@@ -61,7 +62,7 @@ jobs:
           python-version: "3.13"
 
       - name: Install cibuildwheel
-        run: python -m pip install cibuildwheel==2.22.0
+        run: python -m pip install cibuildwheel==3.4.0
 
       - name: Build Python wheels
         run: python -m cibuildwheel --output-dir wheelhouse
