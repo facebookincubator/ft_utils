@@ -19,7 +19,7 @@ class TestFoundIssues(unittest.TestCase):
         def incr() -> None:
             keys: list[int] = list(range(10))
             for _ in range(500_000):
-                d[keys[_ % len(keys)]] += 1  # pyre-ignore[16]
+                d[keys[_ % len(keys)]] += 1
 
         threads: list[threading.Thread] = [
             threading.Thread(target=incr) for _ in range(3)

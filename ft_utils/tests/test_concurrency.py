@@ -108,23 +108,23 @@ class TestConcurrentDict(unittest.TestCase):
 
     def test_len(self) -> None:
         dct: concurrency.ConcurrentDict[int, str] = concurrency.ConcurrentDict()
-        self.assertEqual(len(dct), 0)  # pyre-ignore[6]
+        self.assertEqual(len(dct), 0)
         dct[1] = "a"
-        self.assertEqual(len(dct), 1)  # pyre-ignore[6]
+        self.assertEqual(len(dct), 1)
         dct[2] = "b"
         dct[3] = "c"
-        self.assertEqual(len(dct), 3)  # pyre-ignore[6]
-        del dct[2]  # pyre-ignore[6]
-        self.assertEqual(len(dct), 2)  # pyre-ignore[6]
+        self.assertEqual(len(dct), 3)
+        del dct[2]
+        self.assertEqual(len(dct), 2)
 
     def test_clear(self) -> None:
         dct: concurrency.ConcurrentDict[int, str] = concurrency.ConcurrentDict()
         dct[1] = "a"
         dct[2] = "b"
         dct[3] = "c"
-        self.assertEqual(len(dct), 3)  # pyre-ignore[6]
+        self.assertEqual(len(dct), 3)
         dct.clear()
-        self.assertEqual(len(dct), 0)  # pyre-ignore[6]
+        self.assertEqual(len(dct), 0)
         self.assertFalse(1 in dct)
         # Verify dict is still usable after clear
         dct[4] = "d"
@@ -145,7 +145,7 @@ class TestConcurrentDict(unittest.TestCase):
         self.assertEqual(dct["a"], 1)
         self.assertEqual(dct["b"], 2)
         self.assertEqual(dct["c"], 3)
-        self.assertEqual(len(dct), 3)  # pyre-ignore[6]
+        self.assertEqual(len(dct), 3)
 
     def test_update_from_concurrent_dict(self) -> None:
         src: concurrency.ConcurrentDict[str, int] = concurrency.ConcurrentDict()
@@ -221,7 +221,7 @@ class TestConcurrentDict(unittest.TestCase):
             dct[i] = i * 2
         dct.clear()
         self.assertEqual(list(dct), [])
-        self.assertEqual(len(dct), 0)  # pyre-ignore[6]
+        self.assertEqual(len(dct), 0)
 
     def test_get_with_none_value(self) -> None:
         dct: concurrency.ConcurrentDict[str, object] = concurrency.ConcurrentDict()
@@ -247,7 +247,7 @@ class TestConcurrentDict(unittest.TestCase):
         dct["x"] = 1
         dct.update()  # should be a no-op
         self.assertEqual(dct["x"], 1)
-        self.assertEqual(len(dct), 1)  # pyre-ignore[6]
+        self.assertEqual(len(dct), 1)
 
     def test_regular_dict_update_from_concurrent_dict(self) -> None:
         cd: concurrency.ConcurrentDict[str, int] = concurrency.ConcurrentDict()
@@ -263,9 +263,9 @@ class TestConcurrentDict(unittest.TestCase):
         for i in range(50):
             dct[i] = i
         dct.clear()
-        self.assertEqual(len(dct), 0)  # pyre-ignore[6]
+        self.assertEqual(len(dct), 0)
         dct.clear()  # second clear on empty should be fine
-        self.assertEqual(len(dct), 0)  # pyre-ignore[6]
+        self.assertEqual(len(dct), 0)
         dct[1] = 100
         self.assertEqual(dct[1], 100)
 
@@ -320,7 +320,7 @@ class TestConcurrentDict(unittest.TestCase):
                 lambda: fill(1500),
             ]
         )
-        self.assertEqual(len(dct), 2000)  # pyre-ignore[6]
+        self.assertEqual(len(dct), 2000)
         for i in range(2000):
             self.assertEqual(dct[i], i)
 
@@ -343,7 +343,7 @@ class TestConcurrentDict(unittest.TestCase):
         t.join()
         # After clear + concurrent writes, dict should have at least some of
         # the written values and no crashes
-        self.assertTrue(len(dct) >= 0)  # pyre-ignore[6]
+        self.assertTrue(len(dct) >= 0)
 
     def test_get_threads(self) -> None:
         dct: concurrency.ConcurrentDict[int, int] = concurrency.ConcurrentDict()
@@ -965,7 +965,7 @@ class TestStdConcurrentQueue(unittest.TestCase):
             t.start()
             q.put(10)
         q.join()
-        t.join()  # pyre-ignore[61]
+        t.join()
         self.assertEqual(int(q._active_tasks), 0)
 
     def test_full_shutdown(self) -> None:
@@ -1134,15 +1134,15 @@ class TestConcurrentDeque(unittest.TestCase):
         self.assertEqual(d1, d2)  # [] == []
 
         d2.append(1)
-        self.assertLess(d1, d2)  # pyre-ignore[6] [] < [1]
+        self.assertLess(d1, d2)
         self.assertNotEqual(d1, d2)  # [] != [1]
 
         d1.extend([1, 2])
-        self.assertGreater(d1, d2)  # pyre-ignore[6] [1, 2] > [1]
+        self.assertGreater(d1, d2)
 
         d2.append(2)
-        self.assertLessEqual(d1, d2)  # pyre-ignore[6] [1, 2] <= [1, 2]
-        self.assertGreaterEqual(d1, d2)  # pyre-ignore[6] [1, 2] >= [1, 2]
+        self.assertLessEqual(d1, d2)
+        self.assertGreaterEqual(d1, d2)
 
     def test_rotate(self) -> None:
         d: concurrency.ConcurrentDeque[int] = concurrency.ConcurrentDeque[int](
@@ -1499,7 +1499,6 @@ class TestAtomicReference(unittest.TestCase):
         ov: str = "old_value"
         mv: str = "middle_value"
         nv: str = "new_value"
-        # pyre-ignore[9]
         ref: concurrency.AtomicReference = concurrency.AtomicReference(ov)
         ref.set(mv)
         self.assertFalse(ref.compare_exchange(ov, nv))

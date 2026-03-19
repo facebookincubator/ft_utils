@@ -200,7 +200,7 @@ class TestRWLock(unittest.TestCase):
         while count < 10:
             time.sleep(0.01)
         readers: int = lock.readers()
-        writers_waiting: int = lock.writers_waiting()  # pyre-ignore[16]
+        writers_waiting: int = lock.writers_waiting()
         writer_locked: bool = lock.writer_locked()
         done.set(True)
 
@@ -266,7 +266,7 @@ class TestRWLock(unittest.TestCase):
             time.sleep(0.01)
         readers: int = lock.readers()
         is_writer_locked: bool = lock.writer_locked()
-        waiting: int = lock.writers_waiting()  # pyre-ignore[16]
+        waiting: int = lock.writers_waiting()
         done.set(True)
 
         # Drain the second set of readers.
@@ -317,7 +317,7 @@ class TestRWLock(unittest.TestCase):
             time.sleep(0.01)
 
         time.sleep(0.1)
-        writers_waiting: int = lock.writers_waiting()  # pyre-ignore[16]
+        writers_waiting: int = lock.writers_waiting()
         done.set(True)
 
         for t in threads:

@@ -30,8 +30,8 @@ def run_interrupt_handling(
     # Create atomic flags and references to synchronize between threads
     started_flag = AtomicFlag(False)
     signal_received_flag = AtomicFlag(False)
-    main_thread_id_ref = AtomicReference()  # pyre-ignore
-    handler_thread_id_ref = AtomicReference()  # pyre-ignore
+    main_thread_id_ref = AtomicReference()
+    handler_thread_id_ref = AtomicReference()
 
     main_thread_id_ref.set(threading.get_ident())
 

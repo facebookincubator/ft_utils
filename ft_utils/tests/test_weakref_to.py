@@ -76,7 +76,7 @@ class TestWeakRefToAtomicInt64(WeakReferenceTestBase):
 
 class TestWeakRefToAtomicReference(WeakReferenceTestBase):
     def get_object_to_reference(self) -> AtomicReference:
-        return AtomicReference()  # pyre-ignore[20]
+        return AtomicReference()
 
 
 class TestWeakRefToAtomicFlag(WeakReferenceTestBase):

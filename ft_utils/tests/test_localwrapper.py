@@ -638,8 +638,8 @@ class TestMutations(unittest.TestCase):
         mut: Mutato = Mutato([1, 2, 3, 4])
         wrapper: LocalWrapper = LocalWrapper(mut)
         wrapper += wrapper
-        mut.__class__ = NumberAPI  # pyre-ignore[8]
-        mut.__init__(0)  # pyre-ignore[6, 16]
+        mut.__class__ = NumberAPI
+        mut.__init__(0)  # pyre-ignore[6]
         wrapper += 23
         self.assertEqual(wrapper / 1, 23)
 

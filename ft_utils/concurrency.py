@@ -317,7 +317,6 @@ class ConcurrentQueue:
         def __repr__(self) -> str:
             return f"_PlaceHolder({self.key})"
 
-    # pyre-ignore
     def _load_placeholder(
         self, holder: _PlaceHolder, timeout: float | None, start: float
     ) -> object:
