@@ -328,19 +328,13 @@ class TestConcurrentDict(unittest.TestCase):
         dct: concurrency.ConcurrentDict[int, int] = concurrency.ConcurrentDict()
         for i in range(100):
             dct[i] = i
-        # Clear while another thread is writing; should not crash
-        barrier: threading.Barrier = threading.Barrier(2)
 
         def writer() -> None:
-            barrier.wait()
             for i in range(100, 200):
                 dct[i] = i
 
-        t: threading.Thread = threading.Thread(target=writer)
-        t.start()
-        barrier.wait()
-        dct.clear()
-        t.join()
+        # Clear while another thread is writing; should not crash.
+        run_concurrently([writer, dct.clear])
         # After clear + concurrent writes, dict should have at least some of
         # the written values and no crashes
         self.assertTrue(len(dct) >= 0)
@@ -782,20 +776,14 @@ class TestConcurrentQueue(unittest.TestCase):
                         errors.append(e)
                         break
 
-        threads: list[threading.Thread] = [
-            threading.Thread(target=worker) for _ in range(nthread)
-        ]
-        for t in threads:
-            t.start()
+        def producer() -> None:
+            time.sleep(0.1)
+            for v in range(count):
+                q.push(v)
+                time.sleep(0.03)
+                self.assertEqual(errors, [])
 
-        time.sleep(0.1)
-        for v in range(count):
-            q.push(v)
-            time.sleep(0.03)
-            self.assertEqual(errors, [])
-
-        for t in threads:
-            t.join()
+        run_concurrently([worker] * nthread + [producer])
 
         self.assertEqual(errors, [])
         self.assertEqual(int(p_count), count)
@@ -827,22 +815,12 @@ class TestStdConcurrentQueue(unittest.TestCase):
 
     def test_multiple_threads(self) -> None:
         q: concurrency.StdConcurrentQueue = self._get_queue()
-        flag: concurrency.AtomicFlag = concurrency.AtomicFlag(False)
 
         def worker(n: int) -> None:
-            flag.set(True)
             for i in range(n):
                 q.put(i)
 
-        threads: list[threading.Thread] = [
-            threading.Thread(target=worker, args=(10,)) for _ in range(10)
-        ]
-        for t in threads:
-            t.start()
-        while not flag:
-            pass
-        for t in threads:
-            t.join()
+        run_concurrently(worker, 10, args=(10,))
         for _ in range(100):
             x: object = q.get()
             self.assertIn(x, list(range(10)))
@@ -1412,14 +1390,8 @@ class TestConcurrentGatheringIterator(unittest.TestCase):
                 i += n * offset
                 iterator.insert(i, i)
 
-        for i in range(5):
-            threads: list[threading.Thread] = [
-                threading.Thread(target=worker, args=(10, i)) for i in range(10)
-            ]
-            for t in reversed(threads):
-                t.start()
-            for t in threads:
-                t.join()
+        for _ in range(5):
+            run_concurrently([lambda offset=i: worker(10, offset) for i in range(10)])
             self.assertEqual(list(iterator.iterator(99)), list(range(100)))
 
     def test_iterator_failure(self) -> None:
