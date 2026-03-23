@@ -4,7 +4,7 @@
 
 import contextlib
 import threading
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Iterator, Sequence
 from typing import Any
 
 
@@ -33,7 +33,7 @@ def _catch_threading_exception() -> Iterator[_ExcInfo]:
         threading.excepthook = old_hook
 
 
-def run_concurrently(
+def _run_concurrently(
     worker_func: Callable[..., None] | list[Callable[..., None]],
     nthreads: int | None = None,
     args: tuple[object, ...] = (),
@@ -79,3 +79,33 @@ def run_concurrently(
 
         if cm.exc_value is not None:
             raise cm.exc_value
+
+
+def run_concurrently(
+    worker_func: Callable[..., None],
+    nthreads: int,
+    args: tuple[object, ...] = (),
+    kwargs: dict[str, object] | None = None,
+) -> None:
+    """Run a single worker function concurrently in multiple threads.
+
+    The function is replicated for all threads, each receiving the same
+    ``args`` and ``kwargs``.
+
+    A ``threading.Barrier`` ensures all threads start executing simultaneously.
+    Exceptions raised in worker threads are re-raised in the calling thread.
+    """
+    _run_concurrently(worker_func, nthreads, args, kwargs)
+
+
+def run_each_concurrently(
+    funcs: Sequence[Callable[[], None]],
+) -> None:
+    """Run a list of callables concurrently, one per thread.
+
+    Each callable is invoked with no arguments in its own thread.
+
+    A ``threading.Barrier`` ensures all threads start executing simultaneously.
+    Exceptions raised in worker threads are re-raised in the calling thread.
+    """
+    _run_concurrently(list(funcs))

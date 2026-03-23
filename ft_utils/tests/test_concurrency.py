@@ -12,7 +12,7 @@ from typing import Callable
 
 import ft_utils.concurrency as concurrency
 import ft_utils.local as local
-from ft_utils.threading_test_utils import run_concurrently
+from ft_utils.threading_test_utils import run_concurrently, run_each_concurrently
 
 
 class TestConcurrentDict(unittest.TestCase):
@@ -57,7 +57,7 @@ class TestConcurrentDict(unittest.TestCase):
                 for i in range(1000):
                     del dct[str(-(i + 1))]
 
-        run_concurrently([win, wstr, wdel, win, wstr, wdel])
+        run_each_concurrently([win, wstr, wdel, win, wstr, wdel])
         for i in range(1000):
             self.assertEqual(dct[i], i + 1)
         for i in range(1000):
@@ -312,7 +312,7 @@ class TestConcurrentDict(unittest.TestCase):
             for i in range(500):
                 dct[offset + i] = offset + i
 
-        run_concurrently(
+        run_each_concurrently(
             [
                 lambda: fill(0),
                 lambda: fill(500),
@@ -334,7 +334,7 @@ class TestConcurrentDict(unittest.TestCase):
                 dct[i] = i
 
         # Clear while another thread is writing; should not crash.
-        run_concurrently([writer, dct.clear])
+        run_each_concurrently([writer, dct.clear])
         # After clear + concurrent writes, dict should have at least some of
         # the written values and no crashes
         self.assertTrue(len(dct) >= 0)
@@ -354,7 +354,7 @@ class TestConcurrentDict(unittest.TestCase):
             with lock:
                 results.extend(local_results)
 
-        run_concurrently(
+        run_each_concurrently(
             [
                 lambda: reader(0, 500),
                 lambda: reader(500, 1000),
@@ -783,7 +783,7 @@ class TestConcurrentQueue(unittest.TestCase):
                 time.sleep(0.03)
                 self.assertEqual(errors, [])
 
-        run_concurrently([worker] * nthread + [producer])
+        run_each_concurrently([worker] * nthread + [producer])
 
         self.assertEqual(errors, [])
         self.assertEqual(int(p_count), count)
@@ -1391,7 +1391,9 @@ class TestConcurrentGatheringIterator(unittest.TestCase):
                 iterator.insert(i, i)
 
         for _ in range(5):
-            run_concurrently([lambda offset=i: worker(10, offset) for i in range(10)])
+            run_each_concurrently(
+                [lambda offset=i: worker(10, offset) for i in range(10)]
+            )
             self.assertEqual(list(iterator.iterator(99)), list(range(100)))
 
     def test_iterator_failure(self) -> None:
@@ -1484,7 +1486,7 @@ class TestAtomicReference(unittest.TestCase):
         def set_ref(value: int) -> None:
             ref.set(value)
 
-        run_concurrently([lambda i=i: set_ref(i) for i in range(10)])
+        run_each_concurrently([lambda i=i: set_ref(i) for i in range(10)])
 
         self.assertIn(ref.get(), range(10))
 
@@ -1495,7 +1497,7 @@ class TestAtomicReference(unittest.TestCase):
         def exchange_ref(value: int) -> None:
             ref.exchange(value)
 
-        run_concurrently([lambda i=i: exchange_ref(i) for i in range(1, 11)])
+        run_each_concurrently([lambda i=i: exchange_ref(i) for i in range(1, 11)])
 
         self.assertIn(ref.get(), range(1, 11))
 
