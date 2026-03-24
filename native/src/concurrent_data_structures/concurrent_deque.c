@@ -1025,7 +1025,7 @@ static PyObject* ConcurrentDeque_iter(ConcurrentDequeObject* self) {
 /* Provide the clear implementation for the GC.
  */
 static int ConcurrentDequeIterator_clear(ConcurrentDequeIteratorObject* self) {
-  Py_DECREF(self->deque);
+  Py_CLEAR(self->deque);
   return 0;
 }
 
