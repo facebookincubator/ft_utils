@@ -258,7 +258,9 @@ static PyObject* ReaderWriterLock_lock_read(ReaderWriterLock* self) {
       MUTEX_UNLOCK(self->rw_lock);
       Py_BLOCK_THREADS;
       PyErr_Format(
-          PyExc_RuntimeError, "IntervalLock wait failed with error %d", result);
+          PyExc_RuntimeError,
+          "ReaderWriterLock wait failed with error %d",
+          result);
       return NULL;
     }
   }
@@ -286,10 +288,14 @@ static PyObject* ReaderWriterLock_lock_write(ReaderWriterLock* self) {
   while (self->readers > 0 || self->writer_locked) {
     int result;
     if ((result = COND_WAIT(self->rw_condition, self->rw_lock))) {
+      atomic_int32_sub(&self->writers_waiting, 1);
+      COND_BROADCAST(self->rw_condition);
       MUTEX_UNLOCK(self->rw_lock);
       Py_BLOCK_THREADS;
       PyErr_Format(
-          PyExc_RuntimeError, "IntervalLock wait failed with error %d", result);
+          PyExc_RuntimeError,
+          "ReaderWriterLock wait failed with error %d",
+          result);
       return NULL;
     }
   }
