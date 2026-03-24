@@ -813,8 +813,7 @@ static int BatchExecutorObject_fill_buffer(BatchExecutorObject* self) {
       _Py_atomic_fence_release();
       return -1;
     }
-    Py_INCREF(result);
-    self->buffer[i] = result;
+    Py_XSETREF(self->buffer[i], result);
   }
   /* First make sure everything is set up on all threads then signal other
      threads can move forward by setting index to zero atomically. In theory
