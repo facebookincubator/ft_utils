@@ -123,7 +123,7 @@ static int _py_register_wvls_destructor(
   }
 
   p_destructor = PyLong_FromVoidPtr((void*)wvls_destructor);
-  if (!p_var) {
+  if (!p_destructor) {
     goto cleanup;
   }
 
