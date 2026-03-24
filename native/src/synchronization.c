@@ -176,7 +176,7 @@ static PyMethodDef IntervalLock_methods[] = {
      METH_NOARGS,
      "Call cede() if the interval has expired."},
     {"cede",
-     (PyCFunction)IntervalLock_poll,
+     (PyCFunction)IntervalLock_cede,
      METH_NOARGS,
      "Cede the lock to any waiters and resets interval."},
     {"locked",

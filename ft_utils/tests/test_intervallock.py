@@ -153,6 +153,40 @@ class TestIntervalLock(unittest.TestCase):
             "poll", use_sleep=True, with_cede=False
         )
 
+    def test_cede_yields_before_interval_expires(self) -> None:
+        """Verify cede() unconditionally yields, unlike poll() which only yields after interval."""
+        lock: IntervalLock = IntervalLock(interval=1000.0)  # Very long interval
+        lock.lock()
+        acquired: threading.Event = threading.Event()
+
+        def waiter() -> None:
+            lock.lock()
+            acquired.set()
+            lock.unlock()
+
+        thread: threading.Thread = threading.Thread(target=waiter)
+        thread.start()
+
+        # Give waiter thread time to block on lock
+        time.sleep(0.05)
+
+        # poll() should NOT yield because interval hasn't expired
+        lock.poll()
+        time.sleep(0.05)
+        self.assertFalse(
+            acquired.is_set(), "poll() should not yield before interval expires"
+        )
+
+        # cede() SHOULD yield unconditionally
+        lock.cede()
+        acquired.wait(timeout=1.0)
+        self.assertTrue(
+            acquired.is_set(), "cede() should yield even before interval expires"
+        )
+
+        lock.unlock()
+        thread.join()
+
     def test_cede_allows_other_thread_to_acquire_lock(self) -> None:
         self._test_lock_method_allows_other_threads_to_acquire_lock(
             "cede", use_sleep=False, with_cede=False
