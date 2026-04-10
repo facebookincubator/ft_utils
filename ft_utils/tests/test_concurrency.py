@@ -272,6 +272,46 @@ class TestConcurrentDict(unittest.TestCase):
                 f"Key {i}: got inconsistent values {set(vals)}",
             )
 
+    def test_pop_existing(self) -> None:
+        dct: concurrency.ConcurrentDict[str, int] = concurrency.ConcurrentDict()
+        dct["a"] = 1
+        result = dct.pop("a")
+        self.assertEqual(result, 1)
+        self.assertNotIn("a", dct)
+
+    def test_pop_missing_with_default(self) -> None:
+        dct: concurrency.ConcurrentDict[str, int] = concurrency.ConcurrentDict()
+        result = dct.pop("a", 42)
+        self.assertEqual(result, 42)
+
+    def test_pop_missing_no_default(self) -> None:
+        dct: concurrency.ConcurrentDict[str, int] = concurrency.ConcurrentDict()
+        with self.assertRaises(KeyError):
+            dct.pop("a")
+
+    def test_pop_concurrent(self) -> None:
+        n_keys: int = 200
+        n_threads = 8
+        dct: concurrency.ConcurrentDict[int, int] = concurrency.ConcurrentDict()
+        for i in range(n_keys):
+            dct[i] = i
+
+        # Each popped value should be returned to exactly one thread.
+        results: list[list[int]] = [[] for _ in range(n_threads)]
+
+        def worker(thread_id: int) -> None:
+            for i in range(n_keys):
+                val = dct.pop(i, None)  # pyre-ignore[6]
+                if val is not None:
+                    results[thread_id].append(val)
+
+        run_each_concurrently([lambda t=t: worker(t) for t in range(n_threads)])
+
+        # Every key must have been popped exactly once across all threads.
+        all_popped = sorted(v for thread_vals in results for v in thread_vals)
+        self.assertEqual(all_popped, list(range(n_keys)))
+        self.assertEqual(len(dct), 0)
+
     def test_update_from_iterable_of_pairs(self) -> None:
         dct: concurrency.ConcurrentDict[str, int] = concurrency.ConcurrentDict()
         dct.update([("a", 1), ("b", 2)])  # pyre-ignore[6]

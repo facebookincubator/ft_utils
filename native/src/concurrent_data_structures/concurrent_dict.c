@@ -226,6 +226,61 @@ static PyObject* ConcurrentDict_setdefault(
 #endif
 }
 
+/* Remove and return the value for key.
+ * Raises KeyError if key is not found and no default is given. */
+static PyObject* ConcurrentDict_pop(
+    ConcurrentDictObject* self,
+    PyObject* args) {
+  PyObject* key;
+  PyObject* default_value = NULL;
+
+  if (!PyArg_ParseTuple(args, "O|O", &key, &default_value)) {
+    return NULL;
+  }
+
+  Py_hash_t hash = PyObject_Hash(key);
+  if (hash == -1 && PyErr_Occurred()) {
+    return NULL;
+  }
+
+  Py_ssize_t index = hash % self->size;
+  if (index < 0) {
+    index = -index;
+  }
+
+#ifdef Py_GIL_DISABLED
+  PyObject* value = NULL;
+  int result = PyDict_Pop(self->buckets[index], key, &value);
+  if (result < 0) {
+    return NULL;
+  } else if (result == 0) {
+    if (default_value != NULL) {
+      return Py_NewRef(default_value);
+    }
+    PyErr_SetObject(PyExc_KeyError, key);
+    return NULL;
+  }
+  return value;
+#else
+  PyObject* value = NULL;
+  int result = PyDict_GetItemRef(self->buckets[index], key, &value);
+  if (result < 0) {
+    return NULL;
+  } else if (result == 0) {
+    if (default_value != NULL) {
+      return Py_NewRef(default_value);
+    }
+    PyErr_SetObject(PyExc_KeyError, key);
+    return NULL;
+  }
+  if (PyDict_DelItem(self->buckets[index], key) < 0) {
+    Py_DECREF(value);
+    return NULL;
+  }
+  return value;
+#endif
+}
+
 /* Update from a mapping that supports keys() and __getitem__. */
 static int ConcurrentDict_update_from_keys(
     ConcurrentDictObject* self,
@@ -573,6 +628,11 @@ static PyMethodDef ConcurrentDict_methods[] = {
      METH_VARARGS,
      PyDoc_STR(
          "D.setdefault(key[, default]) -> value. If key is not in D, insert key with default and return default. Thread-safe within a shard.")},
+    {"pop",
+     (PyCFunction)ConcurrentDict_pop,
+     METH_VARARGS,
+     PyDoc_STR(
+         "D.pop(key[, default]) -> value. Remove key and return value. If key is not found, return default or raise KeyError.")},
     {"update",
      (PyCFunction)ConcurrentDict_update,
      METH_VARARGS | METH_KEYWORDS,
