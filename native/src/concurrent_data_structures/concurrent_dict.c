@@ -578,7 +578,16 @@ static PyObject* ConcurrentDict_iter(ConcurrentDictObject* self) {
 
 /* Compare two ConcurrentDicts for equality.
  * Two ConcurrentDicts are equal if they have the same key-value pairs.
- * Not thread consistent. */
+ * Not thread consistent.
+ *
+ * TODO: This is inefficient — we clone the entire ConcurrentDict into a
+ * plain dict on each call just to delegate to PyObject_RichCompareBool.
+ * Better approach:
+ *  1. Fast-reject on ConcurrentDict_len mismatch (O(buckets), not O(keys)).
+ *  2. If both sides have the same bucket count, compare buckets[i] pairwise
+ *     — keys hash to the same index, so no copying is needed.
+ *  3. Fall back to current cloning only when bucket counts differ.
+ *  4. For ConcurrentDict-vs-dict, iterate the dict and do per-key lookups. */
 static PyObject*
 ConcurrentDict_richcompare(PyObject* self_obj, PyObject* other_obj, int op) {
   if (op != Py_EQ && op != Py_NE) {
@@ -628,6 +637,23 @@ ConcurrentDict_richcompare(PyObject* self_obj, PyObject* other_obj, int op) {
     Py_RETURN_TRUE;
   }
   Py_RETURN_FALSE;
+}
+
+/* Return a string representation: ConcurrentDict({...}).
+ * Not thread consistent. */
+static PyObject* ConcurrentDict_repr(ConcurrentDictObject* self) {
+  PyObject* dict = ConcurrentDict_as_dict(self, NULL);
+  if (dict == NULL) {
+    return NULL;
+  }
+  PyObject* dict_repr = PyObject_Repr(dict);
+  Py_DECREF(dict);
+  if (dict_repr == NULL) {
+    return NULL;
+  }
+  PyObject* result = PyUnicode_FromFormat("ConcurrentDict(%U)", dict_repr);
+  Py_DECREF(dict_repr);
+  return result;
 }
 
 static int ConcurrentDict_traverse(
@@ -722,5 +748,6 @@ PyTypeObject ConcurrentDictType = {
     .tp_clear = (inquiry)ConcurrentDict_clear,
     .tp_weaklistoffset = offsetof(ConcurrentDictObject, weakreflist),
     .tp_richcompare = ConcurrentDict_richcompare,
+    .tp_repr = (reprfunc)ConcurrentDict_repr,
     .tp_iter = (getiterfunc)ConcurrentDict_iter,
 };
