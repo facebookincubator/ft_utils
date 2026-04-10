@@ -576,6 +576,60 @@ static PyObject* ConcurrentDict_iter(ConcurrentDictObject* self) {
 
 /* ---- GC / infrastructure ---- */
 
+/* Compare two ConcurrentDicts for equality.
+ * Two ConcurrentDicts are equal if they have the same key-value pairs.
+ * Not thread consistent. */
+static PyObject*
+ConcurrentDict_richcompare(PyObject* self_obj, PyObject* other_obj, int op) {
+  if (op != Py_EQ && op != Py_NE) {
+    Py_RETURN_NOTIMPLEMENTED;
+  }
+
+  /* Build dicts from both sides for comparison */
+  PyObject* self_dict = NULL;
+  PyObject* other_dict = NULL;
+  int result;
+
+  if (Py_TYPE(self_obj) == Py_TYPE(other_obj)) {
+    /* Both are ConcurrentDicts */
+    self_dict = ConcurrentDict_as_dict((ConcurrentDictObject*)self_obj, NULL);
+    if (self_dict == NULL) {
+      return NULL;
+    }
+    other_dict = ConcurrentDict_as_dict((ConcurrentDictObject*)other_obj, NULL);
+    if (other_dict == NULL) {
+      Py_DECREF(self_dict);
+      return NULL;
+    }
+  } else if (PyDict_Check(other_obj)) {
+    /* Compare ConcurrentDict with a regular dict */
+    self_dict = ConcurrentDict_as_dict((ConcurrentDictObject*)self_obj, NULL);
+    if (self_dict == NULL) {
+      return NULL;
+    }
+    other_dict = Py_NewRef(other_obj);
+  } else {
+    Py_RETURN_NOTIMPLEMENTED;
+  }
+
+  result = PyObject_RichCompareBool(self_dict, other_dict, Py_EQ);
+  Py_DECREF(self_dict);
+  Py_DECREF(other_dict);
+
+  if (result < 0) {
+    return NULL;
+  }
+
+  if (op == Py_NE) {
+    result = !result;
+  }
+
+  if (result) {
+    Py_RETURN_TRUE;
+  }
+  Py_RETURN_FALSE;
+}
+
 static int ConcurrentDict_traverse(
     ConcurrentDictObject* self,
     visitproc visit,
@@ -667,5 +721,6 @@ PyTypeObject ConcurrentDictType = {
     .tp_traverse = (traverseproc)ConcurrentDict_traverse,
     .tp_clear = (inquiry)ConcurrentDict_clear,
     .tp_weaklistoffset = offsetof(ConcurrentDictObject, weakreflist),
+    .tp_richcompare = ConcurrentDict_richcompare,
     .tp_iter = (getiterfunc)ConcurrentDict_iter,
 };

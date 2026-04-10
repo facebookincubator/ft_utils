@@ -312,6 +312,35 @@ class TestConcurrentDict(unittest.TestCase):
         self.assertEqual(all_popped, list(range(n_keys)))
         self.assertEqual(len(dct), 0)
 
+    def test_eq_same_content(self) -> None:
+        a: concurrency.ConcurrentDict[str, int] = concurrency.ConcurrentDict()
+        b: concurrency.ConcurrentDict[str, int] = concurrency.ConcurrentDict()
+        a["x"] = 1
+        a["y"] = 2
+        b["x"] = 1
+        b["y"] = 2
+        self.assertEqual(a, b)
+
+    def test_eq_different_content(self) -> None:
+        a: concurrency.ConcurrentDict[str, int] = concurrency.ConcurrentDict()
+        b: concurrency.ConcurrentDict[str, int] = concurrency.ConcurrentDict()
+        a["x"] = 1
+        b["x"] = 2
+        self.assertNotEqual(a, b)
+
+    def test_eq_with_dict(self) -> None:
+        cd: concurrency.ConcurrentDict[str, int] = concurrency.ConcurrentDict()
+        cd["a"] = 1
+        cd["b"] = 2
+        self.assertEqual(cd, {"a": 1, "b": 2})
+        self.assertNotEqual(cd, {"a": 1, "b": 3})
+
+    def test_eq_empty(self) -> None:
+        a: concurrency.ConcurrentDict[str, int] = concurrency.ConcurrentDict()
+        b: concurrency.ConcurrentDict[str, int] = concurrency.ConcurrentDict()
+        self.assertEqual(a, b)
+        self.assertEqual(a, {})
+
     def test_update_from_iterable_of_pairs(self) -> None:
         dct: concurrency.ConcurrentDict[str, int] = concurrency.ConcurrentDict()
         dct.update([("a", 1), ("b", 2)])  # pyre-ignore[6]
