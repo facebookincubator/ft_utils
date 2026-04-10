@@ -229,6 +229,49 @@ class TestConcurrentDict(unittest.TestCase):
         # get() should return None (the stored value), not the default
         self.assertIsNone(dct.get("a", "fallback"))
 
+    def test_setdefault_missing(self) -> None:
+        dct: concurrency.ConcurrentDict[str, int] = concurrency.ConcurrentDict()
+        # Key not present: should insert and return default
+        result = dct.setdefault("a", 42)
+        self.assertEqual(result, 42)
+        self.assertEqual(dct["a"], 42)
+
+    def test_setdefault_existing(self) -> None:
+        dct: concurrency.ConcurrentDict[str, int] = concurrency.ConcurrentDict()
+        dct["a"] = 1
+        # Key present: should return existing value, not overwrite
+        result = dct.setdefault("a", 99)
+        self.assertEqual(result, 1)
+        self.assertEqual(dct["a"], 1)
+
+    def test_setdefault_default_none(self) -> None:
+        dct: concurrency.ConcurrentDict[str, object] = concurrency.ConcurrentDict()
+        # No default arg: should default to None
+        result = dct.setdefault("a")
+        self.assertIsNone(result)
+        self.assertIn("a", dct)
+
+    def test_setdefault_threads(self) -> None:
+        dct: concurrency.ConcurrentDict[int, int] = concurrency.ConcurrentDict()
+        # Multiple threads racing to setdefault the same keys
+        # All should see the same value for each key
+        results: dict[int, list[int]] = {i: [] for i in range(100)}
+
+        def worker(thread_id: int) -> None:
+            for i in range(100):
+                val = dct.setdefault(i, thread_id)
+                results[i].append(val)
+
+        run_each_concurrently([lambda t=t: worker(t) for t in range(8)])
+
+        # For each key, all threads should have gotten the same value
+        for i in range(100):
+            vals = results[i]
+            self.assertTrue(
+                all(v == vals[0] for v in vals),
+                f"Key {i}: got inconsistent values {set(vals)}",
+            )
+
     def test_update_from_iterable_of_pairs(self) -> None:
         dct: concurrency.ConcurrentDict[str, int] = concurrency.ConcurrentDict()
         dct.update([("a", 1), ("b", 2)])  # pyre-ignore[6]

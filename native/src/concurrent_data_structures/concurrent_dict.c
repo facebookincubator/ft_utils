@@ -188,6 +188,44 @@ static PyObject* ConcurrentDict_get(
   return value;
 }
 
+/* If key is not in the dict, insert it with default and return default.
+ * If key is in the dict, return its value.
+ * Thread-safe within a single shard. */
+static PyObject* ConcurrentDict_setdefault(
+    ConcurrentDictObject* self,
+    PyObject* args) {
+  PyObject* key;
+  PyObject* default_value = Py_None;
+
+  if (!PyArg_ParseTuple(args, "O|O", &key, &default_value)) {
+    return NULL;
+  }
+
+  Py_hash_t hash = PyObject_Hash(key);
+  if (hash == -1 && PyErr_Occurred()) {
+    return NULL;
+  }
+
+  Py_ssize_t index = hash % self->size;
+  if (index < 0) {
+    index = -index;
+  }
+#ifdef Py_GIL_DISABLED
+  PyObject* value = NULL;
+  if (PyDict_SetDefaultRef(self->buckets[index], key, default_value, &value) <
+      0) {
+    return NULL;
+  }
+  return value;
+#else
+  PyObject* value = PyDict_SetDefault(self->buckets[index], key, default_value);
+  if (value == NULL) {
+    return NULL;
+  }
+  return Py_NewRef(value);
+#endif
+}
+
 /* Update from a mapping that supports keys() and __getitem__. */
 static int ConcurrentDict_update_from_keys(
     ConcurrentDictObject* self,
@@ -530,6 +568,11 @@ static PyMethodDef ConcurrentDict_methods[] = {
      METH_VARARGS,
      PyDoc_STR(
          "D.get(key[, default]) -> value. Return value for key, or default if not present.")},
+    {"setdefault",
+     (PyCFunction)ConcurrentDict_setdefault,
+     METH_VARARGS,
+     PyDoc_STR(
+         "D.setdefault(key[, default]) -> value. If key is not in D, insert key with default and return default. Thread-safe within a shard.")},
     {"update",
      (PyCFunction)ConcurrentDict_update,
      METH_VARARGS | METH_KEYWORDS,
