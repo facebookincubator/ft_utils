@@ -301,7 +301,7 @@ class TestConcurrentDict(unittest.TestCase):
 
         def worker(thread_id: int, n_keys: int) -> None:
             for i in range(n_keys):
-                val = dct.pop(i, None)  # pyre-ignore[6]
+                val = dct.pop(i, None)
                 if val is not None:
                     results[thread_id].append(val)
 
