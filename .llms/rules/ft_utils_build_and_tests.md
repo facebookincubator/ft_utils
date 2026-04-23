@@ -30,7 +30,7 @@ buck2 test fbcode//ft_utils:test_ft_utils_compat
 buck2 test fbcode//ft_utils:test_ft_utils_issues
 buck2 test fbcode//ft_utils:test_ft_utils_benchmark_utils
 
-# Run tests (free-threading Python 3.13t) — prefix with ft_
+# Run tests (free-threading Python 3.14t) — prefix with ft_
 buck2 test fbcode//ft_utils:ft_test_ft_utils_concurrency
 buck2 test fbcode//ft_utils:ft_test_ft_utils_localwrapper
 buck2 test fbcode//ft_utils:ft_test_ft_utils_weave
@@ -64,7 +64,7 @@ python -m ft_utils.tests.test_run_all  # Run all tests
 
 Every test target has two variants:
 - `test_ft_utils_<name>` — regular GIL Python
-- `ft_test_ft_utils_<name>` — free-threading Python (`py_version = "3.13.free-threading-experimental"`)
+- `ft_test_ft_utils_<name>` — free-threading Python (`py_version = "3.14.free-threading"`)
 
 Same for benchmarks: `<name>_bench` (regular) and `ft_<name>_bench` (free-threading).
 
