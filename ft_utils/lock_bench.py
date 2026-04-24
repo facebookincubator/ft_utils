@@ -19,12 +19,14 @@ class LockBenchmarkProvider(BenchmarkProvider):
     def benchmark_simple_locked(self) -> None:
         _lock = LocalWrapper(self._lock)
         for _ in range(self._operations):
+            # pyrefly: ignore [bad-context-manager]
             with _lock:
                 pass
 
     def benchmark_rw_locked(self) -> None:
         _cont = RWWriteContext(self._rwlock)
         for _ in range(self._operations):
+            # pyrefly: ignore [bad-context-manager]
             with _cont:
                 pass
 

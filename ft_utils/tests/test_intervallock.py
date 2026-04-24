@@ -70,6 +70,7 @@ class TestIntervalLock(unittest.TestCase):
 
     def test_context_manager(self) -> None:
         lock: IntervalLock = IntervalLock()
+        # pyrefly: ignore [bad-context-manager]
         with lock:
             self.assertTrue(lock.locked())
         self.assertFalse(lock.locked())
@@ -113,6 +114,7 @@ class TestIntervalLock(unittest.TestCase):
             started_event: threading.Event, acquired_event: threading.Event
         ) -> None:
             started_event.set()  # Signal that the thread has started
+            # pyrefly: ignore [bad-context-manager]
             with lock:
                 if with_cede:
                     lock.cede()

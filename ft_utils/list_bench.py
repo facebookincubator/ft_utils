@@ -17,6 +17,7 @@ class ListBenchmarkProvider(BenchmarkProvider):
         ll = []
         for _ in range(1024):
             ll.append(ll)
+        # pyrefly: ignore [bad-assignment]
         self._ref_list: list[object] = ll
 
     def benchmark_random_read_int(self) -> None:

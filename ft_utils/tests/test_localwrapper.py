@@ -218,21 +218,25 @@ class TestLocalWrapperBuffer(unittest.TestCase):
         self.wrapper: LocalWrapper = LocalWrapper(self.byte_array)
 
     def test_getbuffer(self) -> None:
+        # pyrefly: ignore [bad-argument-type]
         buf = memoryview(self.wrapper)
         self.assertEqual(buf.tobytes(), self.byte_array)
 
     def test_releasebuffer(self) -> None:
+        # pyrefly: ignore [bad-argument-type]
         buf = memoryview(self.wrapper)
         del buf
         # If no exceptions, assume success
         self.assertTrue(True)
 
     def test_buffer_integrity(self) -> None:
+        # pyrefly: ignore [bad-argument-type]
         with memoryview(self.wrapper) as buf:
             buf[0] = ord("z")
         self.assertEqual(self.byte_array[0], ord("z"))
 
     def test_buffer_type(self) -> None:
+        # pyrefly: ignore [bad-argument-type]
         buf = memoryview(self.wrapper)
         self.assertIsInstance(buf, memoryview)
 
@@ -638,6 +642,7 @@ class TestMutations(unittest.TestCase):
         mut: Mutato = Mutato([1, 2, 3, 4])
         wrapper: LocalWrapper = LocalWrapper(mut)
         wrapper += wrapper
+        # pyrefly: ignore [bad-argument-type]
         mut.__class__ = NumberAPI
         mut.__init__(0)  # pyre-ignore[6]
         wrapper += 23
@@ -700,6 +705,7 @@ class TestLocalWrapperMatrix(unittest.TestCase):
 
     def test_matrix_multiply(self) -> None:
         result: object = self.m1 @ self.m2
+        # pyrefly: ignore [missing-attribute]
         self.assertEqual(result.data, [[19, 22], [43, 50]])
         result = self.wrapped1 @ self.wrapped2
         self.assertEqual(result.data, [[19, 22], [43, 50]])
@@ -779,6 +785,7 @@ class TestLocalWrapperSequenceAPI(unittest.TestCase):
 
     def test_error_on_wrong_type_index(self) -> None:
         with self.assertRaises(TypeError):
+            # pyrefly: ignore [bad-index]
             _ = self.wrapper["a"]
 
 
@@ -1001,6 +1008,7 @@ class TestLocalWrapperContext(unittest.TestCase):
     def test_context_manager(self) -> None:
         simple_cm: SimpleContextManager = SimpleContextManager()
         local_wrapper: LocalWrapper = LocalWrapper(simple_cm)
+        # pyrefly: ignore [bad-context-manager]
         with local_wrapper as value:
             self.assertEqual(value, "enter_value")
             self.assertTrue(simple_cm.enter_called)
@@ -1011,6 +1019,7 @@ class TestLocalWrapperContext(unittest.TestCase):
         local_wrapper: LocalWrapper = LocalWrapper(ctx_mgr)
 
         def checker() -> None:
+            # pyrefly: ignore [bad-context-manager]
             with local_wrapper as value:
                 self.assertEqual(value, "enter_value")
 
@@ -1023,6 +1032,7 @@ class TestLocalWrapperContext(unittest.TestCase):
         local_wrapper: LocalWrapper = LocalWrapper(ctx_mgr)
 
         def checker() -> None:
+            # pyrefly: ignore [bad-context-manager]
             with local_wrapper as value:
                 pass
 
@@ -1035,6 +1045,7 @@ class TestLocalWrapperContext(unittest.TestCase):
         local_wrapper: LocalWrapper = LocalWrapper(ctx_mgr)
 
         def checker() -> None:
+            # pyrefly: ignore [bad-context-manager]
             with local_wrapper as value:
                 pass
 
@@ -1048,6 +1059,7 @@ class TestLocalWrapperContext(unittest.TestCase):
         local_wrapper: LocalWrapper = LocalWrapper(ctx_mgr)
 
         def checker() -> None:
+            # pyrefly: ignore [bad-context-manager]
             with local_wrapper as value:
                 pass
 
@@ -1061,6 +1073,7 @@ class TestLocalWrapperContext(unittest.TestCase):
         local_wrapper: LocalWrapper = LocalWrapper(ctx_mgr)
 
         def checker() -> None:
+            # pyrefly: ignore [bad-context-manager]
             with local_wrapper as value:
                 raise ValueError("Body")
 

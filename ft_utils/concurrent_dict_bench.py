@@ -38,8 +38,11 @@ class ConcurretDictBenchmarkProvider(BenchmarkProvider):
         what = [ft_randint(0, 1024) for _ in range(self._operations // 3)]
         prefix = str(uuid.uuid4())
         for x in what:
+            # pyrefly: ignore [unsupported-operation]
             lw[f"{prefix}{x}"] = x
+            # pyrefly: ignore [bad-index]
             lw[f"{prefix}{x}"]
+            # pyrefly: ignore [unsupported-operation]
             del lw[f"{prefix}{x}"]
 
     def benchmark_update_dict(self) -> None:
@@ -47,32 +50,40 @@ class ConcurretDictBenchmarkProvider(BenchmarkProvider):
         what = [ft_randint(0, 1024) for _ in range(self._operations // 3)]
         prefix = str(uuid.uuid4())
         for x in what:
+            # pyrefly: ignore [unsupported-operation]
             lw[f"{prefix}{x}"] = x
+            # pyrefly: ignore [bad-index]
             lw[f"{prefix}{x}"]
+            # pyrefly: ignore [unsupported-operation]
             del lw[f"{prefix}{x}"]
 
     def benchmark_read(self) -> None:
         lw = LocalWrapper(self._cdct)
         what = [ft_randint(0, 1024) for _ in range(1024)]
         for x in what:
+            # pyrefly: ignore [unsupported-operation]
             lw[f"{x}"] = x
         for x in range(self._operations):
             x = what[x % 1024]
+            # pyrefly: ignore [bad-index]
             lw[f"{x}"]
 
     def benchmark_read_dict(self) -> None:
         lw = LocalWrapper(self._dct)
         what = [ft_randint(0, 1024) for _ in range(1024)]
         for x in what:
+            # pyrefly: ignore [unsupported-operation]
             lw[f"{x}"] = x
         for x in range(self._operations):
             x = what[x % 1024]
+            # pyrefly: ignore [bad-index]
             lw[f"{x}"]
 
     def benchmark_in(self) -> None:
         lw = LocalWrapper(self._cdct)
         what = [ft_randint(0, 1024) for _ in range(1024)]
         for x in what:
+            # pyrefly: ignore [unsupported-operation]
             lw[f"{x}"] = x
         for x in range(self._operations):
             x = what[x % 1024]
@@ -82,6 +93,7 @@ class ConcurretDictBenchmarkProvider(BenchmarkProvider):
         lw = LocalWrapper(self._dct)
         what = [ft_randint(0, 1024) for _ in range(1024)]
         for x in what:
+            # pyrefly: ignore [unsupported-operation]
             lw[f"{x}"] = x
         for x in range(self._operations):
             x = what[x % 1024]

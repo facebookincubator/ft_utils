@@ -27,6 +27,7 @@ class RandomBenchmarkProvider(BenchmarkProvider):
     def benchmark_interval_locked(self) -> None:
         rr = LocalWrapper(random.randint)
         poll = LocalWrapper(self._ilock.poll)
+        # pyrefly: ignore [bad-context-manager]
         with self._ilock:
             for _ in range(self._operations):
                 _ = rr(1, 100)
@@ -45,6 +46,7 @@ class RandomBenchmarkProvider(BenchmarkProvider):
 
     def benchmark_rw_locked(self) -> None:
         rr = LocalWrapper(random.randint)
+        # pyrefly: ignore [bad-context-manager]
         with RWWriteContext(self._rwlock):
             for _ in range(self._operations):
                 _ = rr(1, 100)

@@ -134,8 +134,10 @@ class TestRWLock(unittest.TestCase):
 
     def test_simple_context(self) -> None:
         lock: RWLock = RWLock()
+        # pyrefly: ignore [bad-context-manager]
         with RWReadContext(lock):
             pass
+        # pyrefly: ignore [bad-context-manager]
         with RWWriteContext(lock):
             pass
 
@@ -150,6 +152,7 @@ class TestRWLock(unittest.TestCase):
         wran: AtomicFlag = AtomicFlag(False)
 
         def check_both() -> None:
+            # pyrefly: ignore [bad-context-manager]
             with RWReadContext(lock):
                 rcount.incr()
                 if rcount > 1:
@@ -161,6 +164,7 @@ class TestRWLock(unittest.TestCase):
                 rcount.decr()
                 rran.set(True)
             time.sleep(0.01)
+            # pyrefly: ignore [bad-context-manager]
             with RWWriteContext(lock):
                 wcount.incr()
                 if wcount > 1:
@@ -186,6 +190,7 @@ class TestRWLock(unittest.TestCase):
         done: AtomicFlag = AtomicFlag(False)
 
         def read_wait() -> None:
+            # pyrefly: ignore [bad-context-manager]
             with RWReadContext(lock):
                 count.incr()
                 while not done:
@@ -218,12 +223,14 @@ class TestRWLock(unittest.TestCase):
         started: AtomicFlag = AtomicFlag(False)
 
         def read_wait1() -> None:
+            # pyrefly: ignore [bad-context-manager]
             with RWReadContext(lock):
                 while not done:
                     time.sleep(0.01)
 
         def read_wait2() -> None:
             new_start.incr()
+            # pyrefly: ignore [bad-context-manager]
             with RWReadContext(lock):
                 while not done:
                     time.sleep(0.01)
@@ -231,6 +238,7 @@ class TestRWLock(unittest.TestCase):
 
         def write_wait() -> None:
             started.set(True)
+            # pyrefly: ignore [bad-context-manager]
             with RWWriteContext(lock):
                 pass
 
@@ -289,6 +297,7 @@ class TestRWLock(unittest.TestCase):
         unlocked: AtomicFlag = AtomicFlag(True)
 
         def read_wait() -> None:
+            # pyrefly: ignore [bad-context-manager]
             with RWReadContext(lock):
                 while not done:
                     time.sleep(0.01)
@@ -296,6 +305,7 @@ class TestRWLock(unittest.TestCase):
         def write_wait() -> None:
             unlocked.set(not lock.writer_locked())
             started.set(True)
+            # pyrefly: ignore [bad-context-manager]
             with RWWriteContext(lock):
                 locked.set(lock.writer_locked())
 

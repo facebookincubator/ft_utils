@@ -105,6 +105,7 @@ class ConcurrentGatheringIterator:
                 # called before the wait and so we miss it. Setting a timeout on the wait
                 # fixes this with introducing strict interlocking between producer and consumer
                 # (which is the very thing we are trying to avoid).
+                # pyrefly: ignore [bad-context-manager]
                 with _cond:
                     while key not in _dict:
                         self._cond.wait(0.01)
@@ -270,6 +271,7 @@ class ConcurrentQueue:
             else:
                 _cond = LocalWrapper(self._cond)
                 timed_out = False
+                # pyrefly: ignore [bad-context-manager]
                 with _cond:
                     while _in_key < next_key:
                         if _flags & _shutdown:

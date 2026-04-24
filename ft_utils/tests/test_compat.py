@@ -37,9 +37,12 @@ class TestCompat(unittest.TestCase):
         test_obj: object = _test_compat.TestCompat()
         # pyre-ignore[16]: object has no attribute
         self.assertEqual(test_obj.test_PyDict_GetItemRef(d, "a"), 1)
+        # pyrefly: ignore [missing-attribute]
         self.assertEqual(test_obj.test_PyDict_GetItemRef(d, "b"), 2)
+        # pyrefly: ignore [missing-attribute]
         self.assertIsNone(test_obj.test_PyDict_GetItemRef(d, "c"))
         with self.assertRaises(TypeError):
+            # pyrefly: ignore [missing-attribute]
             test_obj.test_PyDict_GetItemRef(1, "a")
 
 

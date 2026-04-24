@@ -12,6 +12,7 @@ from concurrent.futures import Future, ThreadPoolExecutor
 
 
 def setup() -> None:
+    # pyrefly: ignore [unknown-name]
     global NUM_THREADS, CITIES, MAX_COST, NUM_RUNS
     parser = argparse.ArgumentParser(description="TSP Solver")
     parser.add_argument("--num_threads", type=int, default=8, help="Number of threads")
@@ -33,8 +34,10 @@ def swap(array: list[int], pos1: int, pos2: int) -> None:
 
 def calculate_cost_bf(perm: list[int], matrix: list[list[int]]) -> int:
     cost = 0
+    # pyrefly: ignore [unknown-name]
     for i in range(CITIES - 1):
         cost += matrix[perm[i]][perm[i + 1]]
+    # pyrefly: ignore [unknown-name]
     cost += matrix[perm[CITIES - 1]][perm[0]]  # Returning to the start city
     return cost
 
@@ -58,15 +61,20 @@ def permute(
 
 
 def brute_force_tsp(matrix: list[list[int]]) -> int:
+    # pyrefly: ignore [unknown-name]
     min_cost = [MAX_COST]
+    # pyrefly: ignore [unknown-name]
     cities = list(range(CITIES))
+    # pyrefly: ignore [unknown-name]
     permute(cities, 0, CITIES - 1, matrix, min_cost)
     return min_cost[0]
 
 
 class SharedData:
     def __init__(self) -> None:
+        # pyrefly: ignore [unknown-name]
         self.city_matrix: list[list[int]] = [[0] * CITIES for _ in range(CITIES)]
+        # pyrefly: ignore [unknown-name]
         self.best_cost: int = MAX_COST
         self.lock: threading.Lock = threading.Lock()
 
@@ -84,9 +92,12 @@ def branch_and_bound(
     data: SharedData, start_city: int, barrier: threading.Barrier
 ) -> None:
     barrier.wait()
+    # pyrefly: ignore [unknown-name]
     visited = [False] * CITIES
+    # pyrefly: ignore [unknown-name]
     current_path = [0] * (CITIES + 1)
     # Rotate cities so that start_city is at the beginning
+    # pyrefly: ignore [unknown-name]
     cities = list(range(CITIES))
     cities = cities[start_city:] + cities[:start_city]
     visited[0] = True
@@ -101,6 +112,7 @@ def solve_tsp(
     level: int,
     cities: list[int],
 ) -> None:
+    # pyrefly: ignore [unknown-name]
     if level == CITIES:
         cost = calculate_cost(current_path, data.city_matrix)
         if cost < data.best_cost:
@@ -108,6 +120,7 @@ def solve_tsp(
                 if cost < data.best_cost:
                     data.best_cost = cost
         return
+    # pyrefly: ignore [unknown-name]
     for i in range(CITIES):
         if not visited[i]:
             visited[i] = True
@@ -117,7 +130,9 @@ def solve_tsp(
 
 
 def generate_matrix(matrix: list[list[int]]) -> None:
+    # pyrefly: ignore [unknown-name]
     for i in range(CITIES):
+        # pyrefly: ignore [unknown-name]
         for j in range(CITIES):
             matrix[i][j] = 0 if i == j else random.randint(1, 100)
 
@@ -140,8 +155,11 @@ def run_test(test_number: int, matrix: list[list[int]]) -> None:
     data.city_matrix = matrix
     start = time.time()
     futures = []
+    # pyrefly: ignore [unknown-name]
     with ThreadPoolExecutor(max_workers=NUM_THREADS) as executor:
+        # pyrefly: ignore [unknown-name]
         barrier = threading.Barrier(NUM_THREADS)
+        # pyrefly: ignore [unknown-name]
         for i in range(NUM_THREADS):
             wrapper = ExceptionWrapper(branch_and_bound)
             future = executor.submit(wrapper, data, i, barrier)
@@ -169,9 +187,13 @@ def invoke_main() -> None:
     setup()
     random.seed()
     test_matrices: list[list[list[int]]] = [
-        [[0] * CITIES for _ in range(CITIES)] for _ in range(NUM_RUNS)
+        # pyrefly: ignore [unknown-name]
+        [[0] * CITIES for _ in range(CITIES)]
+        # pyrefly: ignore [unknown-name]
+        for _ in range(NUM_RUNS)
     ]
 
+    # pyrefly: ignore [unknown-name]
     for test in range(NUM_RUNS):
         generate_matrix(test_matrices[test])
         run_test(test + 1, test_matrices[test])

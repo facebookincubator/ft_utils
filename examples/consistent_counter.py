@@ -16,6 +16,7 @@ peak_threads = AtomicInt64(0)
 
 
 def run_in_threads(target: Callable[[], None]) -> float:
+    # pyrefly: ignore [unknown-name]
     global result
     result = 1.0  # pyre-ignore
     threads = []
@@ -29,6 +30,7 @@ def run_in_threads(target: Callable[[], None]) -> float:
 
 
 def run_in_main(target: Callable[[], None]) -> float:
+    # pyrefly: ignore [unknown-name]
     global result
     result = 1.0
     for _ in range(power):
@@ -45,11 +47,13 @@ def print_results(descr: str, target: Callable[[], None]) -> None:
 
 
 def single_multiply_simple() -> None:
+    # pyrefly: ignore [unknown-name]
     global result
     result *= base
 
 
 def single_multiply_threads_tracked() -> None:
+    # pyrefly: ignore [unknown-name]
     global result
     ct = current_threads.incr()
     if ct > peak_threads:
@@ -59,6 +63,7 @@ def single_multiply_threads_tracked() -> None:
 
 
 def single_multiply_long() -> None:
+    # pyrefly: ignore [unknown-name]
     global result
     ct = current_threads.incr()
     if ct > peak_threads:
@@ -76,7 +81,9 @@ ilock = IntervalLock()
 
 
 def single_multiply_consistent() -> None:
+    # pyrefly: ignore [unknown-name]
     global result
+    # pyrefly: ignore [bad-context-manager]
     with ilock:
         ct = current_threads.incr()
         if ct > peak_threads:
