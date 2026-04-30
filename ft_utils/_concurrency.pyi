@@ -3,6 +3,7 @@
 # pyre-strict
 
 from typing import (
+    Dict,
     Generic,
     Iterator,
     List,
@@ -20,7 +21,12 @@ V = TypeVar("V")
 T = TypeVar("T")
 
 class ConcurrentDict(Generic[K, V]):
+    @overload
     def __init__(self, initial_capacity: Optional[int] = ...) -> None: ...
+    @overload
+    def __init__(self, *, dictionary: Dict[K, V]) -> None: ...
+    @overload
+    def __init__(self, initial_capacity: int, dictionary: Dict[K, V]) -> None: ...
     def __contains__(self, key: K) -> bool: ...
     def __setitem__(self, key: K, value: V) -> None: ...
     def __getitem__(self, key: K) -> V: ...

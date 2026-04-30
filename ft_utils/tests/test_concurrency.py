@@ -371,6 +371,42 @@ class TestConcurrentDict(unittest.TestCase):
         self.assertEqual(dct["x"], 1)
         self.assertEqual(len(dct), 1)
 
+    def test_init_from_dict(self) -> None:
+        src: dict[str, int] = {"a": 1, "b": 2, "c": 3}
+        dct: concurrency.ConcurrentDict[str, int] = concurrency.ConcurrentDict(
+            dictionary=src
+        )
+        self.assertEqual(len(dct), 3)
+        self.assertEqual(dct["a"], 1)
+        self.assertEqual(dct["b"], 2)
+        self.assertEqual(dct["c"], 3)
+
+    def test_init_from_dict_positional_capacity(self) -> None:
+        src: dict[str, int] = {"x": 10, "y": 20}
+        dct: concurrency.ConcurrentDict[str, int] = concurrency.ConcurrentDict(
+            5, dictionary=src
+        )
+        self.assertEqual(len(dct), 2)
+        self.assertEqual(dct["x"], 10)
+        self.assertEqual(dct["y"], 20)
+
+    def test_init_from_empty_dict(self) -> None:
+        dct: concurrency.ConcurrentDict[str, int] = concurrency.ConcurrentDict(
+            dictionary={}
+        )
+        self.assertEqual(len(dct), 0)
+
+    def test_init_from_dict_matches_as_dict(self) -> None:
+        src: dict[int, int] = {i: i * 2 for i in range(100)}
+        dct: concurrency.ConcurrentDict[int, int] = concurrency.ConcurrentDict(
+            dictionary=src
+        )
+        self.assertEqual(dct.as_dict(), src)
+
+    def test_init_from_dict_not_a_dict(self) -> None:
+        with self.assertRaises(TypeError):
+            concurrency.ConcurrentDict(dictionary=[1, 2, 3])  # pyre-ignore[6]
+
     def test_regular_dict_update_from_concurrent_dict(self) -> None:
         cd: concurrency.ConcurrentDict[str, int] = concurrency.ConcurrentDict()
         cd["a"] = 1

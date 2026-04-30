@@ -22,6 +22,24 @@ static int ConcurrentDict_clear(ConcurrentDictObject* self) {
   return 0;
 }
 
+static int ConcurrentDict_setitem(
+    ConcurrentDictObject* self,
+    PyObject* key,
+    PyObject* value) {
+  Py_hash_t hash = PyObject_Hash(key);
+  if (hash == -1 && PyErr_Occurred()) {
+    return -1;
+  }
+
+  Py_ssize_t index = hash % self->size;
+  if (index < 0) {
+    index = -index;
+  }
+
+  return value != NULL ? PyDict_SetItem(self->buckets[index], key, value)
+                       : PyDict_DelItem(self->buckets[index], key);
+}
+
 static void ConcurrentDict_dealloc(ConcurrentDictObject* self) {
   PyObject_GC_UnTrack(self);
   ConcurrentDict_clear(self);
@@ -31,12 +49,31 @@ static void ConcurrentDict_dealloc(ConcurrentDictObject* self) {
 
 static PyObject*
 ConcurrentDict_new(PyTypeObject* type, PyObject* args, PyObject* kwds) {
-  Py_ssize_t initial_capacity = 17;
-  static char* kwlist[] = {"initial_capacity", NULL};
+  Py_ssize_t initial_capacity = 0;
+  PyObject* dictionary = NULL;
+  static char* kwlist[] = {"initial_capacity", "dictionary", NULL};
 
   if (!PyArg_ParseTupleAndKeywords(
-          args, kwds, "|n", kwlist, &initial_capacity)) {
+          args, kwds, "|nO", kwlist, &initial_capacity, &dictionary)) {
     return NULL;
+  }
+
+  if (dictionary != NULL && !PyDict_Check(dictionary)) {
+    PyErr_SetString(PyExc_TypeError, "dictionary must be a dict type");
+    return NULL;
+  }
+
+  if (dictionary != NULL) {
+    Py_ssize_t dict_size = PyDict_Size(dictionary);
+    if (initial_capacity == 0 && dict_size > 0) {
+      initial_capacity = dict_size;
+    } else {
+      initial_capacity += dict_size;
+    }
+  }
+  if (initial_capacity <= 0) {
+    // Random prime number chosen to reduce collision in buckets
+    initial_capacity = 17;
   }
 
   ConcurrentDictObject* self = (ConcurrentDictObject*)type->tp_alloc(type, 0);
@@ -55,6 +92,18 @@ ConcurrentDict_new(PyTypeObject* type, PyObject* args, PyObject* kwds) {
       if (!self->buckets[i]) {
         Py_DECREF(self);
         return NULL;
+      }
+    }
+
+    if (dictionary != NULL) {
+      PyObject* key;
+      PyObject* value;
+      Py_ssize_t pos = 0;
+      while (PyDict_Next(dictionary, &pos, &key, &value)) {
+        if (ConcurrentDict_setitem(self, key, value) < 0) {
+          Py_DECREF(self);
+          return NULL;
+        }
       }
     }
   }
@@ -84,32 +133,6 @@ static PyObject* ConcurrentDict_getitem(
   }
 
   return value;
-}
-
-static int ConcurrentDict_setitem(
-    ConcurrentDictObject* self,
-    PyObject* key,
-    PyObject* value) {
-  Py_hash_t hash = PyObject_Hash(key);
-  if (hash == -1 && PyErr_Occurred()) {
-    return -1;
-  }
-
-  Py_ssize_t index = hash % self->size;
-  if (index < 0) {
-    index = -index;
-  }
-
-  if (value == NULL) {
-    if (PyDict_DelItem(self->buckets[index], key) < 0) {
-      return -1;
-    }
-  } else {
-    if (PyDict_SetItem(self->buckets[index], key, value) < 0) {
-      return -1;
-    }
-  }
-  return 0;
 }
 
 static int ConcurrentDict_contains(ConcurrentDictObject* self, PyObject* key) {
