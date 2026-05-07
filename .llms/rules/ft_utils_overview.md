@@ -4,13 +4,13 @@ oncalls: ['python_runtime']
 
 # ft_utils — Overview
 
-ft_utils is a utility library for Free Threaded Python (no-GIL) providing thread-safe data structures, synchronization primitives, and performance helpers. Python + C11 extensions for high-performance concurrent programming on CPython 3.12+, with full free-threading support on 3.13t+/3.14t+.
+ft_utils is a utility library for Free Threaded Python (no-GIL) providing thread-safe data structures, synchronization primitives, and performance helpers. Python + C11 extensions for high-performance concurrent programming on CPython 3.12+, with full free-threading support on 3.14t+.
 
 - **License:** MIT (open source)
 - **Oncall:** python_runtime
 - **Languages:** Python (pyre-strict) + C11
 - **Platforms:** Linux (x86_64, i686, aarch64), Windows (x86_64), macOS (ARM64)
-- **Python versions:** 3.12, 3.13, 3.13t (free-threading), 3.14, 3.14t
+- **Python versions:** 3.12, 3.13, 3.14, 3.14t (free-threading)
 
 ## Architecture
 
