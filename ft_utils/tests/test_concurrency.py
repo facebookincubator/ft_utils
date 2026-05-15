@@ -1126,23 +1126,29 @@ class TestConcurrentDeque(unittest.TestCase):
 
         __lt__: Callable[
             ["TestConcurrentDeque.RichComparisonFailure", object], bool
+            # pyrefly: ignore [bad-assignment]
         ] = rich_comparison_failure
         __le__: Callable[
             ["TestConcurrentDeque.RichComparisonFailure", object], bool
+            # pyrefly: ignore [bad-assignment]
         ] = rich_comparison_failure
         # pyre-ignore[15]
         __eq__: Callable[
             ["TestConcurrentDeque.RichComparisonFailure", object], bool
+            # pyrefly: ignore [bad-assignment]
         ] = rich_comparison_failure
         # pyre-ignore[15]
         __ne__: Callable[
             ["TestConcurrentDeque.RichComparisonFailure", object], bool
+            # pyrefly: ignore [bad-assignment]
         ] = rich_comparison_failure
         __gt__: Callable[
             ["TestConcurrentDeque.RichComparisonFailure", object], bool
+            # pyrefly: ignore [bad-assignment]
         ] = rich_comparison_failure
         __ge__: Callable[
             ["TestConcurrentDeque.RichComparisonFailure", object], bool
+            # pyrefly: ignore [bad-assignment]
         ] = rich_comparison_failure
 
     def test_smoke(self) -> None:
