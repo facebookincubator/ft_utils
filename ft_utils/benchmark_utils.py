@@ -11,7 +11,7 @@ import threading
 import time
 import traceback
 from collections.abc import Callable, Sequence
-from typing import List, Type, TypeVar
+from typing import TypeVar
 
 from ft_utils.local import BatchExecutor
 
