@@ -3,7 +3,6 @@
 # pyre-strict
 
 import gc
-import weakref
 
 from ft_utils.benchmark_utils import (
     BenchmarkProvider,
