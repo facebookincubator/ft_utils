@@ -7,7 +7,7 @@ from collections.abc import Callable
 
 from ft_utils.benchmark_utils import BenchmarkProvider, execute_benchmarks
 from ft_utils.local import LocalWrapper
-from ft_utils.synchronization import IntervalLock, RWLock, RWWriteContext
+from ft_utils.synchronization import RWLock, RWWriteContext
 
 
 class LockBenchmarkProvider(BenchmarkProvider):
