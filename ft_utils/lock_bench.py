@@ -3,7 +3,6 @@
 # pyre-strict
 
 import threading
-from collections.abc import Callable
 
 from ft_utils.benchmark_utils import BenchmarkProvider, execute_benchmarks
 from ft_utils.local import LocalWrapper
