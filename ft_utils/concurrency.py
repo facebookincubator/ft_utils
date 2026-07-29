@@ -18,7 +18,7 @@ except ImportError:
 
 from ft_utils._concurrency import (
     AtomicInt64,
-    AtomicReference,
+    AtomicReference as AtomicReference,
     ConcurrentDeque,
     ConcurrentDict,
 )
