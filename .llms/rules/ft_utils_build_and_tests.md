@@ -1,5 +1,8 @@
 ---
-oncalls: ['python_runtime']
+name: ft-utils-build-and-tests
+metadata:
+  oncalls: ['python_runtime']
+  strict: true
 ---
 
 # ft_utils — Build System & Tests
