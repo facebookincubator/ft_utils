@@ -128,7 +128,7 @@ def execute_benchmarks(
     with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:
         for operation_name, operation_func in operation_methods:
             if hasattr(provider_instance, "set_up"):
-                provider_instance.set_up()  # pyre-ignore[16]
+                provider_instance.set_up()
             barrier = threading.Barrier(num_threads)
             futures = [
                 executor.submit(worker, operation_func, barrier)

@@ -19,10 +19,10 @@ def setup() -> None:
     parser.add_argument("--num_runs", type=int, default=5, help="Number of runs")
     parser.add_argument("--cities", type=int, default=8, help="Number of cities")
     args: argparse.Namespace = parser.parse_args()
-    NUM_THREADS = args.num_threads  # pyre-ignore[10]
-    NUM_RUNS = args.num_runs  # pyre-ignore[10]
-    CITIES = args.cities  # pyre-ignore[10]
-    MAX_COST = sys.maxsize  # pyre-ignore[10]
+    NUM_THREADS = args.num_threads
+    NUM_RUNS = args.num_runs
+    CITIES = args.cities
+    MAX_COST = sys.maxsize
     if NUM_THREADS > CITIES:
         raise ValueError("num_threads > cities will produce misleading results")
     print(f"TSP run for ncities={CITIES}, nthreads={NUM_THREADS}")

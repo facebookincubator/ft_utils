@@ -35,7 +35,7 @@ def run_interrupt_handling(
 
     main_thread_id_ref.set(threading.get_ident())
 
-    def signal_handler(signum: int, *args: object) -> None:  # pyre-ignore
+    def signal_handler(signum: int, *args: object) -> None:
         """
         Signal handler function.
 
@@ -53,7 +53,7 @@ def run_interrupt_handling(
     signal.signal(plat_signal, signal_handler)
 
     # Define a function to run in a separate thread
-    def worker() -> None:  # pyre-ignore
+    def worker() -> None:
         """
         Worker function to run in a separate thread.
         """

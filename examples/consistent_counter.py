@@ -18,7 +18,7 @@ peak_threads = AtomicInt64(0)
 def run_in_threads(target: Callable[[], None]) -> float:
     # pyrefly: ignore [unknown-name]
     global result
-    result = 1.0  # pyre-ignore
+    result = 1.0
     threads = []
     for _ in range(power):
         thread = threading.Thread(target=target)

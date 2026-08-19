@@ -14,7 +14,6 @@ except ImportError:
 
 class TestCompat(unittest.TestCase):
     def test_atomics(self) -> None:
-        # pyre-ignore[16]: Module has no attribute
         test_cls = _test_compat.TestCompat
         methods: list[str] = [
             name for name in dir(test_cls) if callable(getattr(test_cls, name))
@@ -33,7 +32,6 @@ class TestCompat(unittest.TestCase):
 
     def test_get_item_ref(self) -> None:
         d: dict[str, int] = {"a": 1, "b": 2}
-        # pyre-ignore[16]: Module has no attribute
         test_obj: object = _test_compat.TestCompat()
         # pyre-ignore[16]: object has no attribute
         self.assertEqual(test_obj.test_PyDict_GetItemRef(d, "a"), 1)

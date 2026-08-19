@@ -1132,12 +1132,10 @@ class TestConcurrentDeque(unittest.TestCase):
             ["TestConcurrentDeque.RichComparisonFailure", object], bool
             # pyrefly: ignore [bad-assignment]
         ] = rich_comparison_failure
-        # pyre-ignore[15]
         __eq__: Callable[
             ["TestConcurrentDeque.RichComparisonFailure", object], bool
             # pyrefly: ignore [bad-assignment]
         ] = rich_comparison_failure
-        # pyre-ignore[15]
         __ne__: Callable[
             ["TestConcurrentDeque.RichComparisonFailure", object], bool
             # pyrefly: ignore [bad-assignment]
