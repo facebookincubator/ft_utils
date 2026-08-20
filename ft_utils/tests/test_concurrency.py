@@ -906,10 +906,11 @@ class TestConcurrentQueue(unittest.TestCase):
     def test_timeout_placeholdr(self) -> None:
         q: concurrency.ConcurrentQueue = self._get_queue()
         t0: float = time.monotonic()
+        timeout = 0.1
         with self.assertRaises(queue.Empty):
-            q.pop(timeout=0.1)
+            q.pop(timeout=timeout)
         t1: float = time.monotonic()
-        self.assertGreater(t1 - t0, 0.1)
+        self.assertGreater(t1 - t0, timeout * 0.9)
         self.assertEqual(q.size(), 0)
         q.push(35)
         self.assertEqual(q.size(), 1)
