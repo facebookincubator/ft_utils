@@ -1,5 +1,8 @@
 ---
-oncalls: ['python_runtime']
+name: ft-utils-overview
+metadata:
+  oncalls: ['python_runtime']
+  strict: true
 ---
 
 # ft_utils — Overview
