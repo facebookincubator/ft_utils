@@ -1,5 +1,8 @@
 ---
-oncalls: ['cinder']
+name: ft-utils-api
+metadata:
+  oncalls: ['cinder']
+  strict: true
 ---
 
 # ft_utils — API Reference
