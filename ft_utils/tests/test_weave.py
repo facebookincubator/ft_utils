@@ -1,6 +1,5 @@
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 
-# pyre-strict
 
 # We deliberately do not import weave because we want to ensure the native code does this.
 import sys

@@ -8,8 +8,6 @@ import time
 from collections.abc import Callable
 from concurrent.futures import Future, ThreadPoolExecutor
 
-# pyre-strict
-
 
 def setup() -> None:
     # pyrefly: ignore [unknown-name]
