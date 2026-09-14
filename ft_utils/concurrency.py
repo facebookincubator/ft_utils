@@ -1,11 +1,14 @@
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 
 
+import asyncio
 import os
 import threading
 import time
-from collections.abc import Iterator
+from collections import deque
+from collections.abc import Callable, Iterator
 from queue import Empty, Full
+from types import TracebackType
 
 try:
     from queue import ShutDown  # type: ignore
@@ -474,3 +477,147 @@ class StdConcurrentQueue(ConcurrentQueue):
                 _sleep(0)
             else:
                 _sleep(0.05)
+
+
+def _running_loop() -> asyncio.AbstractEventLoop | None:
+    """The event loop running on this thread, or None outside one."""
+    try:
+        return asyncio.get_running_loop()
+    except RuntimeError:
+        return None
+
+
+class _SemaphoreWaiter:
+    """One parked ``ProcessSemaphore.acquire`` and the loop it must wake on."""
+
+    __slots__ = ("loop", "future", "granted")
+
+    def __init__(self, loop: asyncio.AbstractEventLoop) -> None:
+        self.loop = loop
+        self.future: asyncio.Future[None] = loop.create_future()
+        self.granted = False
+
+    def grant(self, running_loop: asyncio.AbstractEventLoop | None) -> bool:
+        """Hand a slot to this waiter. False if its loop is gone.
+
+        ``running_loop`` is the loop the releasing caller is on, or None.
+        """
+        try:
+            if running_loop is self.loop:
+                # Already on the waiter's loop, so resolving the future here
+                # schedules its callbacks through call_soon. Going the
+                # threadsafe route instead would add a self-pipe write to wake
+                # a selector that is not asleep -- measurably the dominant cost
+                # of a handoff.
+                self._wake()
+            else:
+                self.loop.call_soon_threadsafe(self._wake)
+        except RuntimeError:
+            return False
+        self.granted = True
+        return True
+
+    def _wake(self) -> None:
+        if not self.future.done():
+            self.future.set_result(None)
+
+
+class ProcessSemaphore:
+    """A fair counting semaphore shared by every event loop in the process.
+
+    Use this to bound a resource shared across event loops. Neither stdlib
+    primitive covers that case:
+
+    An ``asyncio.Semaphore`` belongs to the loop that created it, so a program
+    running several loops at once -- one per thread being a natural shape on the
+    free threaded build -- cannot use one to bound a resource they all share.
+
+    A ``threading.Semaphore`` is loop agnostic, but acquiring it blocks the
+    calling thread and so stalls every task on that loop.
+
+    This parks the calling task rather than its thread, and hands slots to
+    waiters in arrival order, so it is fair in the same sense
+    ``asyncio.Semaphore`` is: an arriving caller cannot barge past a queued one.
+
+    Example::
+
+        downloads = ProcessSemaphore(4)
+
+        async def fetch(url):
+            async with downloads:
+                return await download(url)
+    """
+
+    def __init__(self, value: int) -> None:
+        if value < 1:
+            raise ValueError(f"value must be >= 1, got {value}")
+        # Bound once, and entered without ``with``: the context manager costs a
+        # second pair of attribute lookups per acquire, which is a tenth of a
+        # microsecond on the uncontended path. The lock stays alive through
+        # these two references.
+        lock = threading.Lock()
+        self._acquire_lock: Callable[[], bool] = lock.acquire
+        self._release_lock: Callable[[], None] = lock.release
+        self._max: int = value
+        self._held: int = 0
+        self._waiters: deque[_SemaphoreWaiter] = deque()
+
+    async def acquire(self) -> None:
+        self._acquire_lock()
+        try:
+            # Queued waiters go first, or a steady arrival rate starves them.
+            if self._held < self._max and not self._waiters:
+                self._held += 1
+                return
+            waiter = _SemaphoreWaiter(asyncio.get_running_loop())
+            self._waiters.append(waiter)
+        finally:
+            self._release_lock()
+        try:
+            await waiter.future
+        except BaseException:
+            self._acquire_lock()
+            try:
+                if waiter.granted:
+                    # Cancelled after the handoff: this task owns a slot it will
+                    # never return from acquire(), so pass it on rather than
+                    # leak it for the life of the process.
+                    self._release_locked(_running_loop())
+                elif waiter in self._waiters:
+                    self._waiters.remove(waiter)
+            finally:
+                self._release_lock()
+            raise
+
+    def release(self) -> None:
+        # Read before taking the lock: it cannot change under us, and the
+        # handoff needs it to tell a same-loop wakeup from a cross-thread one.
+        running = _running_loop()
+        self._acquire_lock()
+        try:
+            self._release_locked(running)
+        finally:
+            self._release_lock()
+
+    def _release_locked(
+        self, running_loop: asyncio.AbstractEventLoop | None = None
+    ) -> None:
+        if self._held == 0:
+            raise ValueError("release() called more times than acquire()")
+        # A slot handed straight to a waiter never becomes free, so _held only
+        # drops when nobody is queued to take it.
+        while self._waiters:
+            if self._waiters.popleft().grant(running_loop):
+                return
+        self._held -= 1
+
+    async def __aenter__(self) -> None:
+        await self.acquire()
+
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: TracebackType | None,
+    ) -> None:
+        self.release()

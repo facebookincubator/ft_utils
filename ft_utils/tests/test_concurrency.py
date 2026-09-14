@@ -1,12 +1,14 @@
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 
 
+import asyncio
 import gc
 import queue
 import threading
 import time
 import unittest
 import weakref
+from collections.abc import Coroutine, Iterable
 from typing import Callable
 
 import ft_utils.concurrency as concurrency
@@ -1730,6 +1732,158 @@ class TestAtomicReference(unittest.TestCase):
             TypeError, r"AtomicReference\(\) takes zero or one argument$"
         ):
             concurrency.AtomicReference(x, y)  # pyre-ignore[19]
+
+
+class TestProcessSemaphore(unittest.TestCase):
+    def _peak_holders(self, sem: concurrency.ProcessSemaphore, loops: int) -> int:
+        """Run `loops` event loops, each in its own thread, against one semaphore."""
+        lock = threading.Lock()
+        live = peak = 0
+
+        async def hold() -> None:
+            nonlocal live, peak
+            async with sem:
+                with lock:
+                    live += 1
+                    peak = max(peak, live)
+                await asyncio.sleep(0.01)
+                with lock:
+                    live -= 1
+
+        def drive() -> None:
+            asyncio.run(_gather(hold() for _ in range(6)))
+
+        threads = [threading.Thread(target=drive) for _ in range(loops)]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join(timeout=60)
+        self.assertFalse(any(thread.is_alive() for thread in threads))
+        self.assertEqual(live, 0)
+        return peak
+
+    def test_budget_is_shared_by_concurrent_loops(self) -> None:
+        # The point of the type: an asyncio.Semaphore rebound per loop would let
+        # every loop hold `budget` at once, so the peak would be loops * budget.
+        budget = 4
+        peak = self._peak_holders(concurrency.ProcessSemaphore(budget), loops=8)
+        # Equality, not <=: a budget never reached would pass vacuously.
+        self.assertEqual(budget, peak)
+
+    def test_rejects_a_nonsense_budget(self) -> None:
+        # A silent, permanent hang at the first acquire.
+        with self.assertRaises(ValueError):
+            concurrency.ProcessSemaphore(0)
+
+    def test_unbalanced_release_is_loud_rather_than_raising_the_cap(self) -> None:
+        # A plain threading.Semaphore accepts this and the budget grows forever.
+        sem = concurrency.ProcessSemaphore(4)
+        with self.assertRaises(ValueError):
+            sem.release()
+        self.assertEqual(4, self._peak_holders(sem, loops=8))
+
+    def test_release_from_a_thread_with_no_loop_wakes_a_waiter(self) -> None:
+        """``release`` is sync, so it can land on a thread running no loop.
+
+        That is the other half of the handoff: the waiter has to be woken
+        through its own loop from the outside, not by the releasing thread.
+        """
+        sem = concurrency.ProcessSemaphore(1)
+
+        async def drive() -> None:
+            await sem.acquire()
+            waiter = asyncio.ensure_future(sem.acquire())
+            await asyncio.sleep(0)  # park it before the release lands
+            releaser = threading.Thread(target=sem.release)
+            releaser.start()
+            await asyncio.wait_for(waiter, timeout=30)
+            releaser.join(timeout=30)
+            self.assertFalse(releaser.is_alive())
+
+        asyncio.run(drive())
+
+    def test_grabbing_a_slot_never_yields_to_the_loop(self) -> None:
+        """A cancel between the grab and the return would leak the slot forever.
+
+        asyncio can only deliver that cancel at a suspension point, so the success
+        path must have none. Driving the coroutine by hand counts them exactly,
+        which a timing-based test cannot: `send` raises StopIteration only if the
+        coroutine finished without yielding.
+        """
+        sem = concurrency.ProcessSemaphore(1)
+        with self.assertRaises(StopIteration):
+            sem.acquire().send(None)
+        sem2 = concurrency.ProcessSemaphore(1)
+        with self.assertRaises(StopIteration):
+            sem2.__aenter__().send(None)
+
+
+class TestProcessSemaphoreOnOneLoop(unittest.IsolatedAsyncioTestCase):
+    """Slot accounting on a single loop, each test on its own isolated loop."""
+
+    async def test_releases_the_slot_when_the_body_raises(self) -> None:
+        sem = concurrency.ProcessSemaphore(1)
+        with self.assertRaises(RuntimeError):
+            async with sem:
+                raise RuntimeError("boom")
+        await asyncio.wait_for(sem.acquire(), timeout=5)
+
+    async def test_cancelling_a_waiter_does_not_erode_the_budget(self) -> None:
+        sem = concurrency.ProcessSemaphore(1)
+        await sem.acquire()
+
+        blocked = asyncio.ensure_future(sem.acquire())
+        await asyncio.sleep(0)
+        blocked.cancel()
+        with self.assertRaises(asyncio.CancelledError):
+            await blocked
+
+        sem.release()
+        await asyncio.wait_for(sem.acquire(), timeout=5)
+
+    async def test_waiters_are_served_in_arrival_order(self) -> None:
+        """Fair in the same sense asyncio.Semaphore is: FIFO, no barging."""
+        sem = concurrency.ProcessSemaphore(1)
+        await sem.acquire()
+        order: list[int] = []
+
+        async def waiter(i: int) -> None:
+            await sem.acquire()
+            order.append(i)
+            sem.release()
+
+        tasks = [asyncio.ensure_future(waiter(i)) for i in range(6)]
+        await asyncio.sleep(0)  # every waiter reaches the queue
+        self.assertEqual([], order)
+
+        sem.release()
+        await asyncio.wait_for(asyncio.gather(*tasks), timeout=5)
+        self.assertEqual(list(range(6)), order)
+
+    async def test_cancelling_after_the_handoff_passes_the_slot_on(self) -> None:
+        """A slot handed to a task that dies before taking it must not vanish.
+
+        release() picks the waiter and schedules its wakeup, but the wakeup has
+        not landed yet. Cancelling in that window leaves a task that owns a slot
+        it will never return from acquire(); without the handoff on the cancel
+        path the budget shrinks by one for the life of the process.
+        """
+        sem = concurrency.ProcessSemaphore(1)
+        await sem.acquire()
+        first = asyncio.ensure_future(sem.acquire())
+        second = asyncio.ensure_future(sem.acquire())
+        await asyncio.sleep(0)
+
+        sem.release()  # hands the slot to `first`, wakeup still queued
+        first.cancel()  # ... which dies before it can take it
+        with self.assertRaises(asyncio.CancelledError):
+            await first
+
+        await asyncio.wait_for(second, timeout=5)
+
+
+async def _gather(coros: Iterable[Coroutine[object, object, None]]) -> None:
+    await asyncio.gather(*coros)
 
 
 if __name__ == "__main__":

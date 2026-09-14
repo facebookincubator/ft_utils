@@ -57,6 +57,12 @@ metadata:
 - `size() -> int`, `empty() -> bool`
 - `shutdown(immediate: bool = False)`
 
+**`ProcessSemaphore`** — Fair counting semaphore shared by every event loop in the process. Use when several loops run at once and must share one budget.
+- `__init__(value: int)`
+- `await acquire()` — parks the calling task, not its thread; waiters served FIFO
+- `release()` — safe from any thread; raises `ValueError` if unbalanced
+- Async context manager (`async with sem:`)
+
 **`StdConcurrentQueue`** — Drop-in replacement for `queue.Queue`, lock-free internally.
 - `__init__(maxsize: int = 0)`
 - `put(item, block=True, timeout=None)`, `get(block=True, timeout=None)`

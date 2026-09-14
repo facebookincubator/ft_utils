@@ -290,3 +290,35 @@ This follows the same API as [queue.Queue](https://docs.python.org/3/library/que
 *   The maxsize is not as strictly guaranteed. If maxsize is set and a large number of threads attempt to fill the queue beyond maxsize then a small overfill might occur due to the lack of a lock to prevent this race condition.
 
 Therefore, in complex applications it may be a better approach to mindfully replace highly contended queue.Queue instances with StdConcurrentQueue. In this case it is also better to use the simpler ConcurrentQueue where possible.
+
+## ProcessSemaphore
+
+A fair counting semaphore whose budget is shared by every event loop in the process.
+
+### Methods
+
+* `__init__(value)`: Initializes the semaphore with `value` slots.
+* `await acquire()`: Takes a slot, parking the calling task if none is free.
+* `release()`: Returns a slot. Safe to call from any thread, with or without a running loop. Raises `ValueError` if called more times than `acquire`.
+* Async context manager: `async with sem:` acquires on entry and releases on exit, including when the body raises.
+
+### Notes
+
+* An `asyncio.Semaphore` belongs to the loop that created it. Sharing one between loops raises `RuntimeError: ... is bound to a different event loop`, and rebuilding one per loop gives each loop its own full budget, which bounds nothing. This type is for the case where several loops run at once and must share one budget.
+* A `threading.Semaphore` is loop agnostic, but acquiring it blocks the calling thread and stalls every task on that loop.
+* **Fair.** Waiters are queued and served in arrival order, and an arriving caller cannot barge past a queued one — the same guarantee `asyncio.Semaphore` gives. A released slot is handed directly to the next waiter, waking it on its own loop.
+* Works the same on GIL and free threaded builds.
+
+### Example
+
+```python
+from .concurrency import ProcessSemaphore
+
+# At most four downloads in flight across the whole process, however many
+# event loops are running.
+downloads = ProcessSemaphore(4)
+
+async def fetch(url):
+    async with downloads:
+        return await download(url)
+```
