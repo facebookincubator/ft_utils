@@ -79,31 +79,11 @@ def build_extensions() -> list[Extension]:
 
 
 def invoke_main() -> None:
-    with open("README.md") as readme_file:
-        long_descr = readme_file.read()
-
+    # Project metadata lives in pyproject.toml ([project]); setuptools ignores
+    # anything duplicated here, so only the C extension build belongs in setup.py.
     setup(
-        name="ft_utils",
-        version="0.1.0",
-        description="A utility library for Free Threaded Python programming",
-        long_description=long_descr,
-        long_description_content_type="text/markdown",
-        author="Meta Platforms, Inc.",
-        author_email="open-source@fb.com",
-        url="https://github.com/facebookincubator/ft_utils",
-        license="MIT",
-        packages=["ft_utils", "ft_utils.tests"],
-        package_dir={"ft_utils": "ft_utils"},
         ext_modules=build_extensions(),
         cmdclass={"build_ext": BuildExtInplace},
-        classifiers=[
-            "Development Status :: 4 - Beta",
-            "Intended Audience :: Developers",
-            "License :: OSI Approved :: MIT License",
-            "Programming Language :: Python :: 3.12",
-            "Programming Language :: Python :: 3.13",
-            "Programming Language :: Python :: 3.14",
-        ],
     )
 
 

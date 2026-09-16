@@ -6,15 +6,26 @@ build-backend = "setuptools.build_meta"
 name = "ft_utils"
 version = "0.1.0"
 authors = [
-  { name="Alex Turner", email="alexturner@meta.com" },
+  { name="Meta Platforms, Inc.", email="open-source@fb.com" },
 ]
 description = "A utility library for Free Threaded Python programming"
 readme = "README.md"
 requires-python = ">=3.13"
+keywords = ["free-threading", "nogil", "concurrency", "threading", "atomics"]
 classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: Microsoft :: Windows",
     "Programming Language :: Python :: 3",
-    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: Free Threading :: 2 - Beta",
+    "Topic :: Software Development :: Libraries",
 ]
+# PEP 639 SPDX expression. Do not add a "License ::" classifier alongside this;
+# setuptools >= 77 rejects using both.
 license = "MIT"
 license-files = ["LICEN[CS]E*"]
 
@@ -27,5 +38,7 @@ Documentation = "https://github.com/facebookincubator/ft_utils/blob/main/docs/in
 packages = ["ft_utils", "ft_utils.tests"]
 
 [tool.setuptools.package-data]
-ft_utils = ["*.pyi", "py.typed", "*.so"]
+# Compiled extensions are placed by ext_modules; globbing "*.so" here would
+# bundle stale local build artifacts and never match Windows ".pyd".
+ft_utils = ["*.pyi", "py.typed"]
 "ft_utils.tests" = ["*.pyi"]
