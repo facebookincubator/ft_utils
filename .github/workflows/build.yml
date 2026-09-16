@@ -14,11 +14,39 @@ on:
 # covers is declared in [tool.cibuildwheel] in pyproject.toml, so the matrix
 # below only picks the runners: cibuildwheel builds natively, and each
 # architecture needs a host of its own.
+#
+# Releases are cut by pushing a "v<version>" tag. check-version refuses to
+# publish when the tag disagrees with the version in pyproject.toml.
 
 jobs:
+  # Everything else depends on this, so a mistyped tag fails in seconds rather
+  # than after the whole wheel matrix has built.
+  check-version:
+    name: Check tag matches version
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Compare tag against pyproject.toml
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_REF}" != refs/tags/* ]]; then
+            echo "Not a tag build; nothing to check."
+            exit 0
+          fi
+          VERSION=$(python3 -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
+          TAG="${GITHUB_REF_NAME#v}"
+          if [ "$VERSION" != "$TAG" ]; then
+            echo "::error::Tag ${GITHUB_REF_NAME} does not match pyproject.toml version ${VERSION}"
+            exit 1
+          fi
+          echo "Tag ${GITHUB_REF_NAME} matches version ${VERSION}"
+
   sdist:
     name: Build sdist
     runs-on: ubuntu-latest
+    needs: check-version
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -45,6 +73,7 @@ jobs:
 
   wheels:
     name: Build wheels (${{ matrix.os }})
+    needs: check-version
     strategy:
       fail-fast: false
       matrix:
@@ -81,6 +110,9 @@ jobs:
   publish-to-testpypi:
     name: Publish to TestPyPI
     runs-on: ubuntu-latest
+    # Main-branch only: on a tag push this version is already on TestPyPI, so
+    # the upload would be a no-op.
+    if: github.ref == 'refs/heads/main'
     needs:
       - sdist
       - wheels
@@ -112,6 +144,7 @@ jobs:
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
     needs:
+      - check-version
       - sdist
       - wheels
     environment:
