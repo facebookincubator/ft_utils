@@ -1,0 +1,5 @@
+# The sdist has to be buildable on its own. setuptools already collects the .c
+# files listed as Extension sources, README.md, and everything matched by
+# package-data -- but not the headers those sources include.
+recursive-include native *.h
+include CHANGELOG.md
