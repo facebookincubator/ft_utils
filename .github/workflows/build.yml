@@ -50,6 +50,7 @@ jobs:
       matrix:
         os:
           - ubuntu-latest      # linux x86_64 + i686
+          - ubuntu-24.04-arm   # linux aarch64
           - windows-latest     # win_amd64
           - macos-latest       # macosx arm64
 
