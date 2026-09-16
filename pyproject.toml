@@ -42,3 +42,17 @@ packages = ["ft_utils", "ft_utils.tests"]
 # bundle stale local build artifacts and never match Windows ".pyd".
 ft_utils = ["*.pyi", "py.typed"]
 "ft_utils.tests" = ["*.pyi"]
+
+[tool.cibuildwheel]
+# The set of interpreters we publish. cp313t/cp314t come from the
+# free-threading enable below.
+build = ["cp313-*", "cp314-*"]
+# 3.13 free-threading is still an opt-in variant on the cibuildwheel 3.x line.
+# Keep the pin on 3.x: 4.x removes cp313t builds entirely.
+enable = ["cpython-freethreading"]
+test-command = "python -m ft_utils.tests.test_run_all"
+build-verbosity = 1
+
+[tool.cibuildwheel.macos]
+# macOS runners are Apple Silicon; we do not publish Intel wheels.
+archs = ["arm64"]

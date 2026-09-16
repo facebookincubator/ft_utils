@@ -10,45 +10,21 @@ on:
       - 'v*'
   workflow_dispatch:
 
-# This build configuration uses a matrix to build and test multiple Python versions.
-# Each version is actioned across on multiple operating systems (Ubuntu, Windows, macOS).
-# For standard Python builds, we use pre-built binary releases for efficiency.
-# However, since nogil-enabled Python binaries are not readily available,
-# we build Python from source with nogil (free threaded) builds.
-# This approach allows us to test our extension with different Python configurations.
-# Our goals are to ensure compatibility and reliability across various environments,
-# and to create platform-specific wheels for distribution on PyPi.
+# cibuildwheel builds and tests every wheel we publish. Which interpreters that
+# covers is declared in [tool.cibuildwheel] in pyproject.toml, so the matrix
+# below only picks the runners: cibuildwheel builds natively, and each
+# architecture needs a host of its own.
 
 jobs:
-  cibuildwheel:
+  wheels:
+    name: Build wheels (${{ matrix.os }})
     strategy:
       fail-fast: false
-      max-parallel: 3
       matrix:
-        include:
-          - wheel: "linux-3.13"
-            os: ubuntu-latest
-            CIBW_BUILD: "cp313-*"
-          - wheel: "linux-3.13t"
-            os: ubuntu-latest
-            CIBW_BUILD: "cp313t-*"
-            CIBW_ENABLE: "cpython-freethreading"
-
-          - wheel: "windows-3.13"
-            os: windows-latest
-            CIBW_BUILD: "cp313-*"
-          - wheel: "windows-3.13t"
-            os: windows-latest
-            CIBW_BUILD: "cp313t-*"
-            CIBW_ENABLE: "cpython-freethreading"
-
-          - wheel: "macos-3.13"
-            os: macos-latest
-            CIBW_BUILD: "cp313-*"
-          - wheel: "macos-3.13t"
-            os: macos-latest
-            CIBW_BUILD: "cp313t-*"
-            CIBW_ENABLE: "cpython-freethreading"
+        os:
+          - ubuntu-latest      # linux x86_64 + i686
+          - windows-latest     # win_amd64
+          - macos-latest       # macosx arm64
 
     runs-on: ${{ matrix.os }}
 
@@ -61,77 +37,23 @@ jobs:
         with:
           python-version: "3.13"
 
+      # Pinned to the 3.x line; see the note by "enable" in pyproject.toml.
       - name: Install cibuildwheel
-        run: python -m pip install cibuildwheel==3.4.0
+        run: python -m pip install cibuildwheel==3.4.1
 
       - name: Build Python wheels
         run: python -m cibuildwheel --output-dir wheelhouse
-        env:
-          CIBW_BUILD: ${{ matrix.CIBW_BUILD }}
-          CIBW_ENABLE: ${{ matrix.CIBW_ENABLE }}
-          CIBW_TEST_COMMAND: python -m ft_utils.tests.test_run_all
 
       - name: Upload Python wheels
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.wheel }}.zip
-          path: wheelhouse/*.whl
-
-
-  deadsnakes:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - wheel: "linux-3.14"
-            python-version: "3.14-dev"
-            nogil: false
-          - wheel: "linux-3.14t"
-            python-version: "3.14-dev"
-            nogil: true
-
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: deadsnakes/action@v3.2.0
-        with:
-          python-version: ${{ matrix.python-version }}
-          nogil: ${{ matrix.nogil }}
-
-      - name: Install build dependencies
-        run: python -m pip install --upgrade setuptools wheel auditwheel
-
-      - name: Build Python wheels
-        run: python setup.py bdist_wheel
-
-      - name: Repair Python wheels
-        run: auditwheel --verbose repair --plat manylinux_2_34_x86_64 dist/*.whl
-
-      - name: Install wheels
-        run: python -m pip install wheelhouse/*.whl
-
-      - name: Test Python wheels
-        run: |
-          mkdir test_dir
-          cd test_dir
-          python -V
-          python -m ft_utils.tests.test_run_all
-
-      - name: Upload Python wheels
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.wheel }}.zip
+          name: dist-wheels-${{ matrix.os }}
           path: wheelhouse/*.whl
 
   publish-to-testpypi:
+    name: Publish to TestPyPI
     runs-on: ubuntu-latest
-    needs:
-      - cibuildwheel
-      - deadsnakes
+    needs: wheels
     environment:
       name: testpypi
       url: https://test.pypi.org/p/ft_utils
@@ -139,27 +61,27 @@ jobs:
       id-token: write
 
     steps:
-      - name: Download Python wheels
+      - name: Download distributions
         uses: actions/download-artifact@v4
         with:
+          pattern: dist-*
           path: dist
           merge-multiple: true
 
-      - name: List Python wheels
+      - name: List distributions
         run: ls -lR dist
 
-      - name: Publish Python wheels
+      - name: Publish distributions
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           repository-url: https://test.pypi.org/legacy/
           skip-existing: true
 
   publish-to-pypi:
+    name: Publish to PyPI
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
-    needs:
-      - cibuildwheel
-      - deadsnakes
+    needs: wheels
     environment:
       name: pypi
       url: https://pypi.org/p/ft_utils
@@ -167,19 +89,21 @@ jobs:
       id-token: write
 
     steps:
-      - name: Download Python wheels
+      - name: Download distributions
         uses: actions/download-artifact@v4
         with:
+          pattern: dist-*
           path: dist
           merge-multiple: true
 
-      - name: List Python wheels
+      - name: List distributions
         run: ls -lR dist
 
-      - name: Publish Python wheels
+      - name: Publish distributions
         uses: pypa/gh-action-pypi-publish@release/v1
 
   github-release:
+    name: Create GitHub release
     runs-on: ubuntu-latest
     needs:
       - publish-to-pypi
@@ -189,13 +113,14 @@ jobs:
       id-token: write
 
     steps:
-    - name: Download Python wheels
+    - name: Download distributions
       uses: actions/download-artifact@v4
       with:
+        pattern: dist-*
         path: dist
         merge-multiple: true
 
-    - name: Sign Python wheels
+    - name: Sign distributions
       uses: sigstore/gh-action-sigstore-python@v3.0.0
       with:
         inputs: ./dist/*.whl
