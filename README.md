@@ -69,13 +69,13 @@ https_proxy=http://fwdproxy:8080 python setup.py
 To install just install the wheel; for example on Windows:
 
 ```
-python -m pip install build\dist\ft_utils-0.1.0-cp314-cp314-win_amd64.whl
+python -m pip install build\dist\ft_utils-0.2.0-cp314-cp314-win_amd64.whl
 ```
 
 Or:
 
 ```
-python -m pip install --force-reinstall build\dist\ft_utils-0.1.0-cp314-cp314-win_amd64.whl
+python -m pip install --force-reinstall build\dist\ft_utils-0.2.0-cp314-cp314-win_amd64.whl
 ```
 
 ### Testing from source
