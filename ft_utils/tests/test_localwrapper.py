@@ -707,10 +707,13 @@ class TestLocalWrapperMatrix(unittest.TestCase):
         # pyrefly: ignore [missing-attribute]
         self.assertEqual(result.data, [[19, 22], [43, 50]])
         result = self.wrapped1 @ self.wrapped2
+        # pyrefly: ignore [missing-attribute]
         self.assertEqual(result.data, [[19, 22], [43, 50]])
         result = self.wrapped1 @ self.m2
+        # pyrefly: ignore [missing-attribute]
         self.assertEqual(result.data, [[19, 22], [43, 50]])
         result = self.m1 @ self.wrapped2
+        # pyrefly: ignore [missing-attribute]
         self.assertEqual(result.data, [[19, 22], [43, 50]])
 
     def test_inplacematrix_multiply(self) -> None:
