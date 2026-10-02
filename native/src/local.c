@@ -520,7 +520,12 @@ static PyObject* LocalWrapper_getattro(
   }
   PyErr_Clear();
   PyObject* target = _LW_Unwrap(self->wrapped);
-  return PyObject_GetAttr(target, attr_name);
+  if (Py_EnterRecursiveCall(" while getting attribute of LocalWrapper")) {
+    return NULL;
+  }
+  result = PyObject_GetAttr(target, attr_name);
+  Py_LeaveRecursiveCall();
+  return result;
 }
 
 static int LocalWrapper_setattro(
