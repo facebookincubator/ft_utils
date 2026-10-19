@@ -10,7 +10,6 @@ from concurrent.futures import Future, ThreadPoolExecutor
 
 
 def setup() -> None:
-    # pyrefly: ignore [unknown-name]
     global NUM_THREADS, CITIES, MAX_COST, NUM_RUNS
     parser = argparse.ArgumentParser(description="TSP Solver")
     parser.add_argument("--num_threads", type=int, default=8, help="Number of threads")
