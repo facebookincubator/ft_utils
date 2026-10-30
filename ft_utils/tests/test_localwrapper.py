@@ -217,21 +217,25 @@ class TestLocalWrapperBuffer(unittest.TestCase):
         self.wrapper: LocalWrapper = LocalWrapper(self.byte_array)
 
     def test_getbuffer(self) -> None:
+        # pyrefly: ignore[bad-argument-type]
         buf = memoryview(self.wrapper)
         self.assertEqual(buf.tobytes(), self.byte_array)
 
     def test_releasebuffer(self) -> None:
+        # pyrefly: ignore[bad-argument-type]
         buf = memoryview(self.wrapper)
         del buf
         # If no exceptions, assume success
         self.assertTrue(True)
 
     def test_buffer_integrity(self) -> None:
+        # pyrefly: ignore[bad-argument-type]
         with memoryview(self.wrapper) as buf:
             buf[0] = ord("z")
         self.assertEqual(self.byte_array[0], ord("z"))
 
     def test_buffer_type(self) -> None:
+        # pyrefly: ignore[bad-argument-type]
         buf = memoryview(self.wrapper)
         self.assertIsInstance(buf, memoryview)
 
