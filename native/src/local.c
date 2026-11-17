@@ -127,17 +127,6 @@ static int LocalWrapper_contains(LocalWrapperObject* self, PyObject* value) {
   return -1;
 }
 
-static PyObject* LocalWrapper_slice(
-    LocalWrapperObject* self,
-    Py_ssize_t start,
-    Py_ssize_t stop) {
-  if (PySequence_Check(self->wrapped)) {
-    return PySequence_GetSlice(self->wrapped, start, stop);
-  }
-  PyErr_SetString(PyExc_TypeError, "object does not support slicing");
-  return NULL;
-}
-
 static int LocalWrapper_ass_item(
     LocalWrapperObject* self,
     Py_ssize_t index,
@@ -146,18 +135,6 @@ static int LocalWrapper_ass_item(
     return PySequence_SetItem(self->wrapped, index, value);
   }
   PyErr_SetString(PyExc_TypeError, "object does not support item assignment");
-  return -1;
-}
-
-static int LocalWrapper_ass_slice(
-    LocalWrapperObject* self,
-    Py_ssize_t start,
-    Py_ssize_t stop,
-    PyObject* value) {
-  if (PySequence_Check(self->wrapped)) {
-    return PySequence_SetSlice(self->wrapped, start, stop, value);
-  }
-  PyErr_SetString(PyExc_TypeError, "object does not support slice assignment");
   return -1;
 }
 
@@ -195,9 +172,9 @@ static PySequenceMethods LocalWrapper_as_sequence = {
     (binaryfunc)LocalWrapper_concat, /* sq_concat */
     (ssizeargfunc)LocalWrapper_repeat, /* sq_repeat */
     (ssizeargfunc)LocalWrapper_item, /* sq_item */
-    (ssizessizeargfunc)LocalWrapper_slice, /* sq_slice */
+    NULL, /* was_sq_slice */
     (ssizeobjargproc)LocalWrapper_ass_item, /* sq_ass_item */
-    (ssizessizeobjargproc)LocalWrapper_ass_slice, /* sq_ass_slice */
+    NULL, /* was_sq_ass_slice */
     (objobjproc)LocalWrapper_contains, /* sq_contains */
     (binaryfunc)LocalWrapper_inplace_concat, /* sq_inplace_concat */
     (ssizeargfunc)LocalWrapper_inplace_repeat, /* sq_inplace_repeat */
@@ -955,7 +932,7 @@ static int exec_local_module(PyObject* module) {
 }
 
 static struct PyModuleDef_Slot module_slots[] = {
-    {Py_mod_exec, exec_local_module},
+    {Py_mod_exec, (void*)exec_local_module},
     _PY_NOGIL_MODULE_SLOT // NOLINT
     {0, NULL} /* sentinel */
 };

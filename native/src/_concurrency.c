@@ -59,7 +59,7 @@ static int exec_local_module(PyObject* module) {
 }
 
 static struct PyModuleDef_Slot module_slots[] = {
-    {Py_mod_exec, exec_local_module},
+    {Py_mod_exec, (void*)exec_local_module},
     _PY_NOGIL_MODULE_SLOT // NOLINT
     {0, NULL} /* sentinel */
 };

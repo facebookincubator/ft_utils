@@ -24,7 +24,7 @@ static void initialize_frequency() {
 }
 
 // NOLINTNEXTLINE
-static ustimestamp_t us_time(void) {
+static inline ustimestamp_t us_time(void) {
   if (frequency == 0) {
     initialize_frequency();
   }
@@ -39,7 +39,7 @@ static ustimestamp_t us_time(void) {
 #include <time.h>
 
 // NOLINTNEXTLINE
-static ustimestamp_t us_time(void) {
+static inline ustimestamp_t us_time(void) {
   struct timespec ts;
   clock_gettime(CLOCK_MONOTONIC, &ts);
   return (ustimestamp_t)ts.tv_sec * 1000000 + ts.tv_nsec / 1000;
@@ -48,7 +48,7 @@ static ustimestamp_t us_time(void) {
 #endif
 
 // NOLINTNEXTLINE
-static int64_t us_difftime(ustimestamp_t end, ustimestamp_t start) {
+static inline int64_t us_difftime(ustimestamp_t end, ustimestamp_t start) {
   return end - start;
 }
 
