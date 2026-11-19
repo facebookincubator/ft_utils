@@ -101,6 +101,16 @@ static inline int64_t atomic_int64_mul(int64_t* obj, int64_t value) {
   return expected;
 }
 
+// Python floor division: C truncates toward zero, so step down one when the
+// remainder is non-zero and the operands have opposite signs.
+static inline int64_t int64_floor_div(int64_t a, int64_t b) {
+  int64_t q = a / b;
+  if ((a % b != 0) && ((a < 0) != (b < 0))) {
+    q -= 1;
+  }
+  return q;
+}
+
 // NOLINTNEXTLINE
 static inline int64_t atomic_int64_div(int64_t* obj, int64_t value) {
   int64_t expected, desired;
@@ -109,7 +119,7 @@ static inline int64_t atomic_int64_div(int64_t* obj, int64_t value) {
   }
   do {
     expected = *obj;
-    desired = expected / value;
+    desired = int64_floor_div(expected, value);
   } while (!_Py_atomic_compare_exchange_int64(obj, &expected, desired));
   return expected;
 }
