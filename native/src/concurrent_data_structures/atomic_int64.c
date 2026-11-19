@@ -72,7 +72,8 @@ static PyObject* atomicint64_div(AtomicInt64Object* self, PyObject* other) {
     PyErr_SetString(PyExc_ZeroDivisionError, "division by zero");
     return NULL;
   }
-  return PyLong_FromLongLong(_Py_atomic_load_int64(&self->value) / value);
+  return PyLong_FromLongLong(
+      int64_floor_div(_Py_atomic_load_int64(&self->value), value));
 }
 
 static PyObject* atomicint64_iadd(AtomicInt64Object* self, PyObject* other) {

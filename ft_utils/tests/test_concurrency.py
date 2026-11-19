@@ -622,6 +622,11 @@ class TestAtomicInt64(unittest.TestCase):
         ai: concurrency.AtomicInt64 = concurrency.AtomicInt64(10)
         self.assertEqual(ai // 2, 5)
 
+    def test_div_rounds_toward_negative_infinity(self) -> None:
+        for a, b in [(-7, 2), (7, -2), (-7, -2), (1, -7), (-1, 7), (-6, 3)]:
+            ai: concurrency.AtomicInt64 = concurrency.AtomicInt64(a)
+            self.assertEqual(ai // b, a // b, (a, b))
+
     def test_iadd(self) -> None:
         ai: concurrency.AtomicInt64 = concurrency.AtomicInt64(10)
         ai += 10
@@ -641,6 +646,12 @@ class TestAtomicInt64(unittest.TestCase):
         ai: concurrency.AtomicInt64 = concurrency.AtomicInt64(10)
         ai //= 2
         self.assertEqual(ai.get(), 5)
+
+    def test_idiv_rounds_toward_negative_infinity(self) -> None:
+        for a, b in [(-7, 2), (7, -2), (-7, -2), (1, -7), (-1, 7), (-6, 3)]:
+            ai: concurrency.AtomicInt64 = concurrency.AtomicInt64(a)
+            ai //= b
+            self.assertEqual(ai.get(), a // b, (a, b))
 
     def test_bool(self) -> None:
         ai: concurrency.AtomicInt64 = concurrency.AtomicInt64(0)
